@@ -1,0 +1,14 @@
+{
+  "install": {
+    "include": ["package.json"]
+  },
+  "restart": {
+    "exclude": [
+      ".wwebjs_auth/**",
+      "node_modules/**"
+    ]
+  },
+  "throttle": 1000
+}
+
+
