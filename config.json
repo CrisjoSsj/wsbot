@@ -1,0 +1,77 @@
+{
+  "storeName": "Express Courier International",
+  "content": {
+    "horario": "Lunes a viernes: 8:00 AM - 7:00 PM. Sábados: 9:00 AM - 3:00 PM. Domingos: Cerrado.",
+    "tarifas": "Tarifas por peso: 0-1 kg: $15 USD, 1-5 kg: $25 USD, 5-10 kg: $40 USD, +10 kg: consultar cotización personalizada. Tarifa de casillero mensual: $10 USD.",
+    "envio": "Tiempo estimado: USA-Local: 5-7 días hábiles. Europa: 7-10 días. Asia: 10-14 días. Seguimiento en tiempo real disponible 24/7 en nuestra web con tu número de tracking.",
+    "pago": "Aceptamos: efectivo, transferencia bancaria (Cuenta: 012345678, Banco: Banco Nacional, Titular: Express Courier, S.A.), tarjetas (Visa, Mastercard, American Express) y pagos digitales (PayPal, Zelle, Bitcoin).",
+    "direcciones": "Oficina Principal: Calle Comercio 234, Local 7 (Centro Comercial Metropolis), Tel: (555) 123-4567. Sucursal Aeropuerto: Terminal Internacional, Local C-22 (zona de llegadas), Tel: (555) 765-4321.",
+    "servicios": "Casillero internacional (dirección permanente en Miami, NY y China). Compra asistida. Consolidación de paquetes. Trámites aduanales. Reempaque y protección especial. Seguro de envíos hasta $2,000 USD.",
+    "tramites": "Documentos necesarios: Identificación válida, factura de compra. Impuestos: calculados según valor declarado + flete (aproximadamente 15-25%). Tiempo de trámite aduanal: 1-3 días hábiles adicionales al tiempo de tránsito.",
+    "contacto": "Tel: +1 (555) 123-4567. Email: info@expresscourier.demo. WhatsApp: el número desde donde nos escribes. Instagram: @ExpressCourier."
+  },
+  "customCommands": {
+    "tracking": {
+      "pattern": "(tracking|seguimiento|rastrear|rastreo).*([A-Z0-9]{6,15})",
+      "response": "Estoy verificando el estado de tu envío con número {match2}. Para obtener la información actualizada, un asesor te contactará pronto. Envía *4* si necesitas asistencia inmediata."
+    },
+    "cotizar": {
+      "pattern": "(cotiz|presupuesto).*([0-9]+).*kilo",
+      "response": "Para un envío de aproximadamente {match2} kilos, la tarifa estimada sería: {match2 <= 1 ? '$15 USD' : match2 <= 5 ? '$25 USD' : match2 <= 10 ? '$40 USD' : 'requiere cotización personalizada'}. Para confirmar el precio exacto, envía *4* para hablar con un asesor."
+    }
+  },
+  "ai": {
+    "enabled": true,
+    "groqApiKey": "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",
+    "groqModel": "llama3-8b-8192",
+    "confidenceThreshold": 0.85,
+    "contextLength": 5,
+    "timeout": 10000,
+    "maxTokens": 1000,
+    "instructions": "Eres un asistente amigable y profesional de Express Courier (servicio de courier internacional). Sé conciso: 2-3 líneas. NO saludes con 'hola' en cada respuesta a menos que sea el primer contacto. Evita muletillas como 'entiendo', 'comprendo', 'claro'. Usa 0-2 emojis naturales. Responde directo y útil. Si piden cotizaciones personalizadas, tracking específico o resolver casos particulares, siempre sugiere enviar *4* para hablar con un asesor. Para dudas sobre tarifas estándar, horarios u oficinas, responde directo con la información. SOLO puedes responder usando la información de este contexto. Si la respuesta no está aquí, responde exactamente: 'No tengo esa información, por favor envía *4* para hablar con un asesor humano.' No inventes respuestas ni respondas temas fuera del servicio de courier."
+  },
+  "businessDescription": "servicio de courier internacional",
+  "menu": {
+    "title": "MENÚ",
+    "options": [
+      {
+        "number": "2",
+        "text": "Nuestras oficinas",
+        "key": "direcciones",
+        "response": "Oficina Principal: Calle Comercio 234, Local 7 (Centro Comercial Metropolis). También tenemos oficina en el Aeropuerto (Terminal Internacional, Local C-22). ¿Quieres que te envíe la ubicación exacta?"
+      },
+      {
+        "number": "3",
+        "text": "Tarifas y costos",
+        "key": "tarifas",
+        "response": "Tarifas por peso: 0-1 kg: $15 USD, 1-5 kg: $25 USD, 5-10 kg: $40 USD. Para paquetes más grandes o cotizaciones personalizadas, envía *4* y un asesor te atenderá."
+      },
+      {
+        "number": "5",
+        "text": "Horarios de atención",
+        "key": "horario",
+        "response": "Atendemos L-V de 8:00 a 19:00 y Sábados de 9:00 a 15:00. ¿Necesitas atención fuera de este horario?"
+      },
+      {
+        "number": "6",
+        "text": "Métodos de pago",
+        "key": "pago",
+        "response": "Aceptamos efectivo, transferencias bancarias, tarjetas (Visa, Mastercard, Amex) y pagos digitales (PayPal, Zelle, Bitcoin). ¿Con cuál prefieres pagar?"
+      },
+      {
+        "number": "7",
+        "text": "Servicios disponibles",
+        "key": "servicios",
+        "response": "Ofrecemos: casillero internacional (Miami, NY, China), compra asistida, consolidación de paquetes, trámites aduanales, reempaque y seguro de envíos. ¿Sobre cuál necesitas más información?"
+      },
+      {
+        "number": "8",
+        "text": "Tracking de paquete",
+        "key": "tracking",
+        "response": "Para rastrear tu paquete, necesitamos tu número de tracking. Por favor, envía *4* para que un asesor te ayude con el seguimiento en tiempo real de tu envío."
+      }
+    ],
+    "footer": "📝 Envía el número de la opción que necesitas\n📲 También puedes escribir precios, horarios, etc.",
+    "greeting": "¡Hola! Bienvenido a nuestro menú. ¿En qué podemos ayudarte hoy?"
+  }
+}

@@ -1,0 +1,476 @@
+<%- include('layout', {
+    pageTitle: 'Dashboard',
+    activeTab: 'dashboard',
+    username: username,
+    showMessages: true,
+    body: `
+            <style>
+                body, .container, .row, .card, .card-header, .card-body, .breadcrumb, .preview-box {
+                    background: var(--bg-primary, #181c24) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                }
+                .card, .feature-card, .stat-card, .shadow {
+                    background: var(--card-bg, #232836) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                    border: none !important;
+                    box-shadow: 0 0.15rem 1.75rem 0 #10131a99 !important;
+                }
+                .card-header, .feature-card .card-header, .stat-card .card-header {
+                    background: var(--bg-secondary, #232836) !important;
+                    color: var(--accent-color, #25D366) !important;
+                    border-bottom: 1px solid var(--border-color, #333) !important;
+                }
+                .breadcrumb {
+                    background: transparent !important;
+                    color: var(--text-secondary, #b0b0b0) !important;
+                }
+                .form-control, .input-group-text {
+                    background: #232836 !important;
+                    color: #f1f1f1 !important;
+                    border: 1px solid var(--border-color, #333) !important;
+                }
+                .form-control:focus {
+                    background: #232836 !important;
+                    color: #fff !important;
+                    border-color: var(--accent-color, #25D366) !important;
+                    box-shadow: 0 0 0 0.2rem #25d36633;
+                }
+                .btn-primary, .btn-outline-primary, .btn-success, .btn-outline-success {
+                    background: var(--accent-color, #25D366) !important;
+                    border: none !important;
+                    color: #181c24 !important;
+                    font-weight: bold;
+                }
+                .btn-primary:hover, .btn-outline-primary:hover, .btn-success:hover, .btn-outline-success:hover {
+                    background: var(--highlight-color, #128C7E) !important;
+                    color: #fff !important;
+                }
+                .btn-outline-secondary, .btn-outline-secondary:hover {
+                    background: transparent !important;
+                    color: var(--accent-color, #25D366) !important;
+                    border: 1px solid var(--accent-color, #25D366) !important;
+                }
+                .alert-info {
+                    background: #1a232d !important;
+                    color: #b3e6c7 !important;
+                    border: 1px solid #25D366 !important;
+                }
+                .alert-success {
+                    background: #1d2b1d !important;
+                    color: #b3e6c7 !important;
+                    border: 1px solid #25D366 !important;
+                }
+                .alert-danger {
+                    background: #2d1a1a !important;
+                    color: #ffb3b3 !important;
+                    border: 1px solid #ff3b3b !important;
+                }
+                .text-primary, .text-info, .text-gray-800, .font-weight-bold, .h3, .h4, .h5, .h6 {
+                    color: var(--accent-color, #25D366) !important;
+                }
+                .border-left-primary, .border-left-info, .border-left-warning {
+                    border-left: 4px solid var(--accent-color, #25D366) !important;
+                }
+                .bg-primary, .bg-info, .bg-light, .bg-white {
+                    background: var(--card-bg, #232836) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                }
+                .text-muted {
+                    color: var(--text-secondary, #b0b0b0) !important;
+                }
+                .stat-number, .status-indicator.online {
+                    color: var(--accent-color, #25D366) !important;
+                }
+                .feature-card:hover {
+                    box-shadow: 0 0.5rem 1.75rem 0 #25d36633 !important;
+                    border: 1px solid var(--accent-color, #25D366) !important;
+                }
+            </style>
+        <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="d-flex justify-content-between align-items-center fade-in">
+                <div>
+                    <h1 class="h3 mb-0" style="color: #25D366;">Dashboard</h1>
+                    <p class="mb-0">Panel de administración del Bot de WhatsApp</p>
+                </div>
+                <div class="d-flex">
+                    <!-- Elementos "EN VIVO" y botón de actualizar eliminados -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Estado de WhatsApp -->
+    <div class="card shadow mb-4" id="whatsappStatusCard">
+        <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+            <h6 class="m-0 font-weight-bold" style="color: #25D366;">Estado de Conexión WhatsApp</h6>
+            <div class="d-flex align-items-center">
+                <button class="btn btn-sm btn-outline-danger btn-responsive-logout" id="btnLogoutWhatsapp" onclick="if(typeof logoutWhatsapp==='function'){logoutWhatsapp(event)}else{if(confirm('¿Está seguro que desea cerrar la sesión de WhatsApp? Necesitará escanear el código QR nuevamente para volver a conectarse.')){fetch('/admin/api/whatsapp/logout',{method:'POST'}).then(r=>r.json()).then(d=>{alert(d.success?'Sesión cerrada correctamente':'Error al cerrar sesión');location.reload()})}}">
+                    <i class="bi bi-box-arrow-right me-1"></i> <span class="btn-text">Cerrar Sesión</span>
+                </button>
+            </div>
+        </div>
+        <div class="card-body">
+            <div class="row align-items-center">
+                <div class="col-md-4 text-center">
+                    <div id="connectionStatus" style="display: none;">
+                        <!-- Eliminado el spinner para evitar confusión -->
+                    </div>
+                    <div id="manualStatus">
+                        <!-- Estado directo sin animación -->
+                        <script>
+                            // Función para mostrar el estado de WhatsApp
+                            function checkManualStatus() {
+                                fetch('/admin/api/whatsapp/status')
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        const statusElement = document.getElementById('manualStatus');
+                                        const qrContainer = document.getElementById('qrCodeContainer');
+                                        const qrPlaceholder = document.getElementById('qrPlaceholder');
+                                        const qrCode = document.getElementById('qrCode');
+                                        
+                                        if (!statusElement) return;
+                                        
+                                        if (data.status === 'ready') {
+                                            // Si está conectado
+                                            statusElement.innerHTML = 
+                                                '<div class="alert alert-success">' +
+                                                    '<i class="bi bi-check-circle-fill"></i> CONECTADO' +
+                                                '</div>';
+                                            
+                                            // Ocultar el contenedor del QR si está conectado
+                                            if (qrContainer) {
+                                                qrContainer.classList.add('d-none');
+                                            }
+                                        } else {
+                                            // Si no está conectado
+                                            statusElement.innerHTML = 
+                                                '<div class="alert alert-' + (data.status === 'connecting' ? 'warning' : 'danger') + '">' +
+                                                    '<i class="bi bi-' + (data.status === 'connecting' ? 'clock' : 'x-circle') + '"></i> ' + 
+                                                    data.status.toUpperCase() +
+                                                '</div>';
+                                            
+                                            // Mostrar el contenedor del QR si no está conectado
+                                            if (qrContainer) {
+                                                qrContainer.classList.remove('d-none');
+                                                
+                                                // Comprobar si hay código QR disponible
+                                                if (data.hasQrCode) {
+                                                    if (qrPlaceholder) qrPlaceholder.classList.add('d-none');
+                                                    if (qrCode) {
+                                                        qrCode.classList.remove('d-none');
+                                                        // Si el QR está vacío, solicitarlo
+                                                        if (qrCode.innerHTML.trim() === '') {
+                                                            checkForQR();
+                                                        }
+                                                    }
+                                                } else {
+                                                    if (qrPlaceholder) qrPlaceholder.classList.remove('d-none');
+                                                    if (qrCode) qrCode.classList.add('d-none');
+                                                }
+                                            }
+                                        }
+                                    })
+                                    .catch(err => {
+                                        console.error("Error verificando estado manual:", err);
+                                    });
+                            }
+                            
+                            // Verificar estado inmediatamente y luego cada 2 segundos
+                            checkManualStatus(); // Verificación inmediata
+                            setInterval(checkManualStatus, 2000);
+                        </script>
+                    </div>
+                </div>
+                <div class="col-md-8" id="qrCodeContainer">
+                    <div class="text-center p-3">
+                        <div id="qrPlaceholder">
+                            <p class="mb-3">El código QR aparecerá aquí cuando esté disponible</p>
+                            <div class="spinner-border text-primary" role="status">
+                                <span class="visually-hidden">Esperando QR...</span>
+                            </div>
+                        </div>
+                        <div id="qrCode" class="d-none">
+                            <!-- El QR se mostrará aquí -->
+                        </div>
+                        <p class="mt-3 small text-muted">Escanee el código QR con la app de WhatsApp para conectar su cuenta</p>
+                    </div>
+                    <script>
+                        // Función para actualizar el QR
+                        function checkAndUpdateQR() {
+                            fetch('/admin/api/whatsapp/status')
+                                .then(res => res.json())
+                                .then(data => {
+                                    const qrContainer = document.getElementById('qrCodeContainer');
+                                    const qrPlaceholder = document.getElementById('qrPlaceholder');
+                                    const qrCode = document.getElementById('qrCode');
+                                    
+                                    if (data.status === 'ready' || data.status === 'authenticated') {
+                                        // Si está conectado, ocultar el contenedor del QR
+                                        qrContainer.classList.add('d-none');
+                                        return;
+                                    }
+                                    
+                                    // Si no está conectado, mostrar el contenedor
+                                    qrContainer.classList.remove('d-none');
+                                    
+                                    // Si hay un QR disponible, mostrarlo
+                                    if (data.hasQrCode && data.qrCode) {
+                                        if (qrPlaceholder) qrPlaceholder.classList.add('d-none');
+                                        if (qrCode) {
+                                            qrCode.classList.remove('d-none');
+                                            // Limpiar el contenedor del QR
+                                            qrCode.innerHTML = '';
+                                            // Generar nuevo QR
+                                            new QRCode(qrCode, {
+                                                text: data.qrCode,
+                                                width: 256,
+                                                height: 256,
+                                                colorDark: '#000000',
+                                                colorLight: '#ffffff',
+                                                correctLevel: QRCode.CorrectLevel.H
+                                            });
+                                        }
+                                    } else {
+                                        // Si no hay QR, mostrar el placeholder
+                                        if (qrPlaceholder) qrPlaceholder.classList.remove('d-none');
+                                        if (qrCode) qrCode.classList.add('d-none');
+                                    }
+                                })
+                                .catch(err => console.error('Error al verificar QR:', err));
+                        }
+                        
+                        // Verificar QR cada 2 segundos
+                        setInterval(checkAndUpdateQR, 2000);
+                        // También verificar inmediatamente
+                        checkAndUpdateQR();
+                    </script>
+                    <script>
+                        // Comprobar el estado inicial para mostrar/ocultar el QR
+                        fetch('/admin/api/whatsapp/status')
+                            .then(res => res.json())
+                            .then(data => {
+                                const qrContainer = document.getElementById('qrCodeContainer');
+                                if (qrContainer) {
+                                    // Si está conectado (ready), ocultar el contenedor del QR
+                                    if (data.status === 'ready' || data.status === 'authenticated') {
+                                        qrContainer.classList.add('d-none');
+                                    } else {
+                                        qrContainer.classList.remove('d-none');
+                                    }
+                                }
+                            })
+                            .catch(err => console.error('Error al verificar estado inicial:', err));
+                    </script>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 fade-in feature-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Nombre de la Tienda</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800">${config.storeName || 'No definido'}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-shop fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 fade-in feature-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Secciones de Contenido</div>
+                            <div class="h5 mb-0 font-weight-bold text-gray-800 stat-number" id="sectionCount">${Object.keys(config.content || {}).length}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-file-earmark-text fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-4 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2 fade-in feature-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Estado del Bot</div>
+                            <div class="mb-0 font-weight-bold text-gray-800">
+                                <span class="status-indicator online"></span>
+                                <span id="botStatus">Activo</span>
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-robot fs-2 text-gray-300"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12 mb-5">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 font-weight-bold text-primary fs-5">Accesos Rápidos</h6>
+                </div>
+                <div class="card-body pt-4">
+                    <div class="row quick-access-buttons">
+                        <div class="col-md-4 mb-4">
+                            <a href="/admin/edit/general" class="btn btn-primary btn-block w-100 py-3 py-md-4 fs-5 quick-access-btn">
+                                <i class="bi bi-gear fs-4 me-2"></i><span class="btn-text">Configuración General</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <a href="/admin/edit/ai" class="btn btn-success btn-block w-100 py-3 py-md-4 fs-5 quick-access-btn">
+                                <i class="bi bi-cpu fs-4 me-2"></i><span class="btn-text">Configuración de IA</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <a href="/admin/edit/menu" class="btn btn-outline-primary btn-block w-100 py-3 py-md-4 fs-5 quick-access-btn">
+                                <i class="bi bi-list-nested fs-4 me-2"></i><span class="btn-text">Editar Menú</span>
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-4">
+                            <a href="/admin/edit/context" class="btn btn-success btn-block w-100 py-3 py-md-4 fs-5 quick-access-btn">
+                                <i class="bi bi-journal-text fs-4 me-2"></i><span class="btn-text">Editar Contexto IA</span>
+                            </a>
+                        </div>
+                        <!-- Botón de depuración rápida eliminado por petición del administrador -->
+                    </div>
+                    <div class="alert alert-info mt-2 mb-0">
+                        El menú ahora es editable desde el botón <strong>Editar Menú</strong> en los accesos rápidos; el bot responde con IA por defecto y además:
+                        <ul class="mb-0 mt-2">
+                            <li><strong>4</strong> → Contactar asesor (modo humano)</li>
+                            <li><strong>bot</strong> → Volver al asistente</li>
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Las secciones de previsualización de mensajes y configuración JSON han sido eliminadas -->
+    <script>
+        // Inicialización del dashboard
+        document.addEventListener('DOMContentLoaded', function() {
+            // Inicializar tooltips
+            var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+            tooltipTriggerList.map(function (tooltipTriggerEl) {
+                return new bootstrap.Tooltip(tooltipTriggerEl)
+            });
+            
+            // Animación para los elementos fade-in
+            const fadeElements = document.querySelectorAll('.fade-in');
+            fadeElements.forEach((el, index) => {
+                setTimeout(() => {
+                    el.classList.add('visible');
+                }, 100 * index);
+            });
+        });
+    </script>
+    `,
+    extraScripts: `
+    <script>
+        // Scripts adicionales del dashboard (si se necesitan en el futuro)
+    </script>
+    <style>
+        /* Estilos para botones grandes en accesos rápidos */
+        .card-body .btn {
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+        .card-body .btn:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 15px rgba(0,0,0,0.2);
+        }
+        .card-body .btn i {
+            transition: all 0.3s ease;
+        }
+        .card-body .btn:hover i {
+            transform: scale(1.2);
+        }
+        
+        /* Estilos específicos para mejorar experiencia en móvil */
+        @media (max-width: 767.98px) {
+            .quick-access-btn {
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                padding: 0.75rem !important;
+                font-size: 1rem !important;
+            }
+            
+            .quick-access-btn i {
+                font-size: 1.5rem !important;
+                margin-right: 0.5rem !important;
+            }
+            
+            .status-indicator {
+                display: inline-block;
+                width: 10px;
+                height: 10px;
+                border-radius: 50%;
+                background-color: #25D366;
+                margin-right: 5px;
+            }
+            
+            /* Ajustes para el botón de cerrar sesión */
+            .btn-responsive-logout {
+                width: auto;
+                padding: 0.4rem 0.8rem !important;
+                font-size: 0.85rem !important;
+            }
+            
+            /* Mejorar visualización del QR */
+            #qrCodeContainer {
+                padding: 0.5rem !important;
+            }
+            
+            /* Ajustar alerta informativa */
+            .alert-info {
+                font-size: 0.9rem !important;
+            }
+            
+            .alert-info ul {
+                padding-left: 1.2rem !important;
+            }
+            
+            /* Haciendo el navbar más compacto en móviles */
+            .navbar-brand {
+                font-size: 1.1rem !important;
+            }
+            
+            /* Ajustando la altura de las cards de estadísticas */
+            .feature-card {
+                min-height: auto !important;
+                padding: 0.5rem 0 !important;
+            }
+            
+            /* Ajustar tamaño del texto en estadísticas */
+            .text-xs {
+                font-size: 0.7rem !important;
+            }
+            
+            .h5 {
+                font-size: 1.15rem !important;
+            }
+        }
+    </style>
+    `
+}) %>

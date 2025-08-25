@@ -1,0 +1,59 @@
+[
+  {
+    "date": "2025-08-19",
+    "totalInteractions": 10,
+    "successfulResponses": 10,
+    "lowConfidenceResponses": 0,
+    "intentDetection": {
+      "buying": 2,
+      "info": 1,
+      "general": 7,
+      "firstTime": 0,
+      "urgent": 0
+    },
+    "averageConfidence": 0.985,
+    "derivationsToHuman": 0,
+    "responseQuality": {
+      "cleanedResponses": 3,
+      "muletillasRemoved": 0
+    }
+  },
+  {
+    "date": "2025-08-20",
+    "totalInteractions": 10,
+    "successfulResponses": 6,
+    "lowConfidenceResponses": 4,
+    "intentDetection": {
+      "buying": 2,
+      "info": 4,
+      "general": 4,
+      "firstTime": 0,
+      "urgent": 0
+    },
+    "averageConfidence": 0.65,
+    "derivationsToHuman": 3,
+    "responseQuality": {
+      "cleanedResponses": 2,
+      "muletillasRemoved": 0
+    }
+  },
+  {
+    "date": "2025-08-25",
+    "totalInteractions": 10,
+    "successfulResponses": 10,
+    "lowConfidenceResponses": 0,
+    "intentDetection": {
+      "buying": 2,
+      "info": 1,
+      "general": 7,
+      "firstTime": 2,
+      "urgent": 1
+    },
+    "averageConfidence": 0.9809999999999999,
+    "derivationsToHuman": 0,
+    "responseQuality": {
+      "cleanedResponses": 0,
+      "muletillasRemoved": 0
+    }
+  }
+]

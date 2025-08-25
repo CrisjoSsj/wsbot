@@ -1,0 +1,512 @@
+<%- include('layout', {
+    pageTitle: 'Configuración de IA',
+    activeTab: 'ai',
+    username: username,
+    showMessages: true,
+    body: `
+            <style>
+                body, .container, .row, .card, .card-header, .card-body, .breadcrumb, .preview-box {
+                    background: var(--bg-primary, #181c24) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                }
+                .card, .feature-card, .stat-card, .shadow {
+                    background: var(--card-bg, #232836) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                    border: none !important;
+                    box-shadow: 0 0.15rem 1.75rem 0 #10131a99 !important;
+                }
+                .card-header, .feature-card .card-header, .stat-card .card-header {
+                    background: var(--bg-secondary, #232836) !important;
+                    color: var(--accent-color, #25D366) !important;
+                    border-bottom: 1px solid var(--border-color, #333) !important;
+                }
+                .breadcrumb {
+                    background: transparent !important;
+                    color: var(--text-secondary, #b0b0b0) !important;
+                }
+                .form-control, .input-group-text {
+                    background: #232836 !important;
+                    color: #f1f1f1 !important;
+                    border: 1px solid var(--border-color, #333) !important;
+                }
+                .form-control:focus {
+                    background: #232836 !important;
+                    color: #fff !important;
+                    border-color: var(--accent-color, #25D366) !important;
+                    box-shadow: 0 0 0 0.2rem #25d36633;
+                }
+                .btn-primary, .btn-outline-primary, .btn-success, .btn-outline-success {
+                    background: var(--accent-color, #25D366) !important;
+                    border: none !important;
+                    color: #181c24 !important;
+                    font-weight: bold;
+                }
+                .btn-primary:hover, .btn-outline-primary:hover, .btn-success:hover, .btn-outline-success:hover {
+                    background: var(--highlight-color, #128C7E) !important;
+                    color: #fff !important;
+                }
+                .btn-outline-secondary, .btn-outline-secondary:hover {
+                    background: transparent !important;
+                    color: var(--accent-color, #25D366) !important;
+                    border: 1px solid var(--accent-color, #25D366) !important;
+                }
+                .alert-info {
+                    background: #1a232d !important;
+                    color: #b3e6c7 !important;
+                    border: 1px solid #25D366 !important;
+                }
+                .alert-success {
+                    background: #1d2b1d !important;
+                    color: #b3e6c7 !important;
+                    border: 1px solid #25D366 !important;
+                }
+                .alert-danger {
+                    background: #2d1a1a !important;
+                    color: #ffb3b3 !important;
+                    border: 1px solid #ff3b3b !important;
+                }
+                .text-primary, .text-info, .text-gray-800, .font-weight-bold, .h3, .h4, .h5, .h6 {
+                    color: var(--accent-color, #25D366) !important;
+                }
+                .border-left-primary, .border-left-info, .border-left-warning {
+                    border-left: 4px solid var(--accent-color, #25D366) !important;
+                }
+                .bg-primary, .bg-info, .bg-light, .bg-white {
+                    background: var(--card-bg, #232836) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                }
+                .text-muted {
+                    color: var(--text-secondary, #b0b0b0) !important;
+                }
+                .stat-number, .status-indicator.online {
+                    color: var(--accent-color, #25D366) !important;
+                }
+                .feature-card:hover {
+                    box-shadow: 0 0.5rem 1.75rem 0 #25d36633 !important;
+                    border: 1px solid var(--accent-color, #25D366) !important;
+                }
+            </style>
+        <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Configuración de IA</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0" style="color: #25D366;">Configuración de Inteligencia Artificial</h1>
+            <p style="color: #f1f1f1;">Configure la integración con Groq AI para respuestas automáticas ultra-rápidas e inteligentes.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold" style="color: #25D366;">Configuración de Groq AI</h6>
+                </div>
+                <div class="card-body">
+                    <form id="aiForm">
+                        <div class="mb-3 form-check form-switch">
+                            <input class="form-check-input" type="checkbox" role="switch" id="aiEnabled" ${config.ai?.enabled ? 'checked' : ''}>
+                            <label class="form-check-label" for="aiEnabled">Habilitar procesamiento con IA</label>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="groqApiKey" class="form-label" style="color: #25D366;">API Key de Groq</label>
+                            <div class="input-group">
+                                <input type="password" class="form-control" id="groqApiKey" name="groqApiKey" 
+                                    value="${config.ai?.groqApiKey || ''}" 
+                                    placeholder="Ingresa tu API Key de Groq">
+                                <button class="btn btn-outline-secondary" type="button" id="toggleApiKey">
+                                    <i class="bi bi-eye"></i>
+                                </button>
+                            </div>
+                            <div class="form-text" style="color: #b3e6c7;">
+                                Obtén tu API Key gratis en: 
+                                <a href="https://console.groq.com/keys" target="_blank" style="color: #25D366;">Groq Console</a>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="groqModel" class="form-label" style="color: #25D366;">Modelo de Groq</label>
+                            <select class="form-select" id="groqModel" name="groqModel">
+                                <option value="llama-3.1-8b-instant" ${(config.ai?.groqModel || 'llama-3.1-8b-instant') === 'llama-3.1-8b-instant' ? 'selected' : ''}>
+                                    Llama 3.1 8B Instant (Recomendado - Ultra rápido)
+                                </option>
+                                <option value="llama3-8b-8192" ${config.ai?.groqModel === 'llama3-8b-8192' ? 'selected' : ''}>
+                                    Llama 3 8B (Equilibrado)
+                                </option>
+                                <option value="mixtral-8x7b-32768" ${config.ai?.groqModel === 'mixtral-8x7b-32768' ? 'selected' : ''}>
+                                    Mixtral 8x7B (Excelente para español)
+                                </option>
+                                <option value="gemma2-9b-it" ${config.ai?.groqModel === 'gemma2-9b-it' ? 'selected' : ''}>
+                                    Gemma 2 9B (Más potente)
+                                </option>
+                            </select>
+                            <div class="form-text" style="color: #b3e6c7;">Llama 3.1 8B Instant ofrece la mejor velocidad para atención al cliente en tiempo real.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="confidenceThreshold" class="form-label" style="color: #25D366;">Umbral de confianza</label>
+                            <input type="range" class="form-range" min="0" max="1" step="0.05" id="confidenceThreshold" 
+                                value="${config.ai?.confidenceThreshold || 0.7}">
+                            <div class="d-flex justify-content-between">
+                                <span class="form-text" style="color: #b3e6c7;">0 (Baja)</span>
+                                <span id="confidenceValue" class="form-text fw-bold" style="color: #25D366;">${config.ai?.confidenceThreshold || 0.7}</span>
+                                <span class="form-text" style="color: #b3e6c7;">1 (Alta)</span>
+                            </div>
+                            <div class="form-text" style="color: #b3e6c7;">Nivel mínimo de confianza para que la IA responda automáticamente. Si es menor, deriva a humano.</div>
+                        </div>
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="contextLength" class="form-label">Mensajes de contexto</label>
+                                    <input type="number" class="form-control" id="contextLength" name="contextLength" 
+                                        value="${config.ai?.contextLength || 5}" min="1" max="20">
+                                    <div class="form-text">Número de mensajes anteriores a incluir como contexto.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <label for="timeout" class="form-label">Timeout (ms)</label>
+                                    <input type="number" class="form-control" id="timeout" name="timeout" 
+                                        value="${config.ai?.timeout || 15000}" min="5000" step="1000">
+                                    <div class="form-text" style="color: #b3e6c7;">Tiempo máximo de espera para respuesta de Groq.</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="maxTokens" class="form-label">Máximo de tokens</label>
+                            <input type="number" class="form-control" id="maxTokens" name="maxTokens" 
+                                value="${config.ai?.maxTokens || 1000}" min="100" max="4000" step="100">
+                            <div class="form-text" style="color: #b3e6c7;">Límite máximo de tokens para la respuesta de la IA.</div>
+                        </div>
+                        
+                        <hr>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Contexto del negocio</label>
+                            <p class="form-text" style="color: #b3e6c7;">Este contexto se enviará a Groq para que pueda generar respuestas más precisas.</p>
+                            
+                            <div class="mb-2">
+                                <label for="businessDescription" class="form-label">Descripción general del negocio</label>
+                                <textarea class="form-control" id="businessDescription" name="businessDescription" rows="3">${config.businessDescription || ''}</textarea>
+                                <div class="form-text">Describe qué hace tu negocio, productos o servicios principales.</div>
+                            </div>
+                            
+                            <div class="mb-2">
+                                <label for="aiInstructions" class="form-label">Instrucciones específicas para la IA</label>
+                                <textarea class="form-control" id="aiInstructions" name="aiInstructions" rows="4">${config.ai?.instructions || ''}</textarea>
+                                <div class="form-text">Instrucciones sobre el tono, estilo y comportamiento que debe tener la IA.</div>
+                            </div>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="button" id="testAiBtn" class="btn btn-outline-primary me-2">
+                                <i class="bi bi-lightning me-1"></i>Probar IA
+                            </button>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Guardar Configuración
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Cómo obtener API Key</h6>
+                </div>
+                <div class="card-body">
+                    <p style="color: #f1f1f1;">Para configurar Groq AI:</p>
+                    <ol>
+                        <li>Ve a <a href="https://makersuite.google.com/app/apikey" target="_blank">Google AI Studio</a></li>
+                        <li>Inicia sesión con tu cuenta de Google</li>
+                        <li>Haz clic en "Create API Key"</li>
+                        <li>Copia la API Key generada</li>
+                        <li>Pégala en el campo de arriba</li>
+                    </ol>
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle me-2"></i>
+                        <strong style="color: #25D366;">Gratis:</strong> Groq ofrece un generoso nivel gratuito para empezar.
+                    </div>
+                    <div class="alert alert-warning">
+                        <i class="bi bi-shield-exclamation me-2"></i>
+                        <strong>Seguridad:</strong> Tu API Key se almacena de forma segura y solo la usa tu bot.
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4" id="testAiCard" style="display: none;">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Prueba de IA</h6>
+                </div>
+                <div class="card-body">
+                    <form id="testAiForm">
+                        <div class="mb-3">
+                            <label for="testMessage" class="form-label">Mensaje de prueba</label>
+                            <input type="text" class="form-control" id="testMessage" placeholder="¿Cuáles son sus horarios?" value="¿Cuáles son sus horarios de atención?">
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Enviar a Groq</button>
+                    </form>
+                    
+                    <div class="mt-3" id="aiResponseContainer" style="display: none;">
+                        <label class="form-label" style="color: #25D366;">Respuesta de Groq:</label>
+                        <div class="p-3 border rounded bg-light">
+                            <div id="aiResponse"></div>
+                            <div class="mt-2 d-flex justify-content-between">
+                                <small class="text-muted">Confianza: <span id="aiConfidence"></span></small>
+                                <small class="text-muted">Tiempo: <span id="aiResponseTime"></span>ms</small>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-success">Estado de la IA</h6>
+                </div>
+                <div class="card-body text-center">
+                    <div id="aiStatus">
+                        <div class="spinner-border spinner-border-sm" role="status"></div>
+                        <span class="ms-2">Verificando estado...</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    `,
+    extraScripts: `
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Verificar estado de la IA al cargar
+            checkAIStatus();
+            
+            // Toggle para mostrar/ocultar API Key
+            const toggleApiKey = document.getElementById('toggleApiKey');
+            const apiKeyInput = document.getElementById('groqApiKey');
+            
+            toggleApiKey.addEventListener('click', function() {
+                if (apiKeyInput.type === 'password') {
+                    apiKeyInput.type = 'text';
+                    toggleApiKey.innerHTML = '<i class="bi bi-eye-slash"></i>';
+                } else {
+                    apiKeyInput.type = 'password';
+                    toggleApiKey.innerHTML = '<i class="bi bi-eye"></i>';
+                }
+            });
+            
+            // Actualizar valor del umbral de confianza al mover el slider
+            const confidenceThreshold = document.getElementById('confidenceThreshold');
+            const confidenceValue = document.getElementById('confidenceValue');
+            
+            confidenceThreshold.addEventListener('input', function() {
+                confidenceValue.textContent = this.value;
+            });
+            
+            // Manejar envío del formulario de IA
+            const aiForm = document.getElementById('aiForm');
+            aiForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Obtener valores del formulario
+                const aiConfig = {
+                    enabled: document.getElementById('aiEnabled').checked,
+                    groqApiKey: document.getElementById('groqApiKey').value,
+                    groqModel: document.getElementById('groqModel').value,
+                    confidenceThreshold: parseFloat(document.getElementById('confidenceThreshold').value),
+                    contextLength: parseInt(document.getElementById('contextLength').value),
+                    timeout: parseInt(document.getElementById('timeout').value),
+                    maxTokens: parseInt(document.getElementById('maxTokens').value),
+                    instructions: document.getElementById('aiInstructions').value
+                };
+                
+                // Obtener descripción del negocio
+                const businessDescription = document.getElementById('businessDescription').value;
+                
+                // Validaciones
+                if (aiConfig.enabled && !aiConfig.groqApiKey) {
+                    showAlert('warning', 'Por favor, ingresa tu API Key de Groq para habilitar la IA');
+                    return;
+                }
+                
+                // Enviar datos al servidor
+                fetch('/admin/api/config', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        ai: aiConfig,
+                        businessDescription
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Configuración de IA guardada correctamente');
+                        // Verificar estado nuevamente
+                        setTimeout(checkAIStatus, 1000);
+                    } else {
+                        showAlert('danger', 'Error al guardar: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('danger', 'Error al comunicarse con el servidor');
+                });
+            });
+            
+            // Mostrar/ocultar tarjeta de prueba de IA
+            const testAiBtn = document.getElementById('testAiBtn');
+            const testAiCard = document.getElementById('testAiCard');
+            
+            testAiBtn.addEventListener('click', function() {
+                testAiCard.style.display = testAiCard.style.display === 'none' ? 'block' : 'none';
+            });
+            
+            // Manejar prueba de IA
+            const testAiForm = document.getElementById('testAiForm');
+            testAiForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const testMessage = document.getElementById('testMessage').value;
+                if (!testMessage) {
+                    showAlert('warning', 'Por favor, escribe un mensaje para probar');
+                    return;
+                }
+                
+                // Mostrar indicador de carga
+                document.getElementById('aiResponse').innerHTML = '<div class="text-center"><div class="spinner-border spinner-border-sm" role="status"></div> Procesando con Groq...</div>';
+                document.getElementById('aiResponseContainer').style.display = 'block';
+                
+                const startTime = Date.now();
+                
+                // Enviar solicitud de prueba
+                fetch('/admin/api/ai/test', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ message: testMessage })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    const responseTime = Date.now() - startTime;
+                    
+                    if (data.success) {
+                        // Mostrar respuesta de la IA
+                        document.getElementById('aiResponse').innerText = data.text;
+                        document.getElementById('aiConfidence').innerText = data.confidence.toFixed(2);
+                        document.getElementById('aiResponseTime').innerText = responseTime;
+                        
+                        // Mostrar estado basado en confianza
+                        const confidenceSpan = document.getElementById('aiConfidence');
+                        if (data.confidence >= 0.7) {
+                            confidenceSpan.className = 'text-success fw-bold';
+                        } else if (data.confidence >= 0.5) {
+                            confidenceSpan.className = 'text-warning fw-bold';
+                        } else {
+                            confidenceSpan.className = 'text-danger fw-bold';
+                        }
+                    } else {
+                        // Mostrar error
+                        let errorMsg = '';
+                        switch(data.reason) {
+                            case 'ai_disabled':
+                                errorMsg = 'La IA está deshabilitada';
+                                break;
+                            case 'groq_not_initialized':
+                                errorMsg = 'Groq AI no está inicializado. Verifica tu API Key.';
+                                break;
+                            case 'timeout':
+                                errorMsg = 'Timeout - Groq tardó demasiado en responder';
+                                break;
+                            case 'low_confidence':
+                                errorMsg = 'Respuesta con baja confianza: ' + (data.suggestedResponse || 'Sin respuesta');
+                                break;
+                            default:
+                                errorMsg = 'Error: ' + (data.details || data.reason);
+                        }
+                        
+                        document.getElementById('aiResponse').innerHTML = 
+                            '<div class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>' + errorMsg + '</div>';
+                        document.getElementById('aiConfidence').innerText = data.confidence ? data.confidence.toFixed(2) : '-';
+                        document.getElementById('aiResponseTime').innerText = responseTime;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    document.getElementById('aiResponse').innerHTML = 
+                        '<div class="text-danger"><i class="bi bi-exclamation-triangle me-2"></i>Error al comunicarse con el servidor</div>';
+                    document.getElementById('aiConfidence').innerText = '-';
+                    document.getElementById('aiResponseTime').innerText = Date.now() - startTime;
+                });
+            });
+        });
+        
+        function checkAIStatus() {
+            fetch('/admin/api/ai/status')
+            .then(response => response.json())
+            .then(data => {
+                const statusDiv = document.getElementById('aiStatus');
+                
+                if (data.isInitialized && data.hasApiKey) {
+                    statusDiv.innerHTML = 
+                        '<div class="text-success">' +
+                        '<i class="bi bi-check-circle me-2"></i>' +
+                        '<strong>IA Activa</strong><br>' +
+                        '<small>Modelo: ' + data.model + '</small>' +
+                        '</div>';
+                } else if (!data.hasApiKey) {
+                    statusDiv.innerHTML = 
+                        '<div class="text-warning">' +
+                        '<i class="bi bi-exclamation-triangle me-2"></i>' +
+                        '<strong>API Key Requerida</strong><br>' +
+                        '<small style="color: #b3e6c7;">Configura tu API Key de Groq</small>' +
+                        '</div>';
+                } else {
+                    statusDiv.innerHTML = 
+                        '<div class="text-danger">' +
+                        '<i class="bi bi-x-circle me-2"></i>' +
+                        '<strong>IA No Disponible</strong><br>' +
+                        '<small>Error de inicialización</small>' +
+                        '</div>';
+                }
+            })
+            .catch(error => {
+                document.getElementById('aiStatus').innerHTML = 
+                    '<div class="text-muted">' +
+                    '<i class="bi bi-question-circle me-2"></i>' +
+                    '<strong>Estado desconocido</strong>' +
+                    '</div>';
+            });
+        }
+
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
+            alertDiv.innerHTML = 
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            alertContainer.appendChild(alertDiv);
+
+            // Auto-cerrar después de 5 segundos
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    if (alertContainer.contains(alertDiv)) {
+                        alertContainer.removeChild(alertDiv);
+                    }
+                }, 150);
+            }, 5000);
+        }
+    </script>
+    `
+}) %>

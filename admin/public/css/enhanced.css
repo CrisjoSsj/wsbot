@@ -1,0 +1,342 @@
+/* Mejoras de UX para el panel de administración */
+
+/* Estilos para WhatsApp Preview */
+.whatsapp-preview {
+    background-color: #e5ddd5;
+    background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAADIAAAAyCAYAAAAeP4ixAAAABmJLR0QA/wD/AP+gvaeTAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAAB3RJTUUH4AgcEAoKyABQ3QAAABVJREFUaN7t18ENwCAQxEBQYSgM/WuYj+EJZSbZv5VpGgsAAAD4ocZBFLtzjSUWvbNrJxZlzagRixK1olEsStSKRrEoUSsaxaJErWhcXpSoFY1iUaJWNIpFiVrRKBYlakWjWJSoFY1iUaJWNIpFiVrRKBYlakWjWJSoFY1iUaJWNP6vKFErGsWiRK1oFIsStaJRLErUikaxKFErGsWiRK1oFIsStaJRLErUikaxKFErGsWiRK1oFIsStaJRLErUigYAAAAAAH7oAdWbHVVyXnifAAAAAElFTkSuQmCC");
+    background-repeat: repeat;
+    border-radius: 8px;
+    padding: 16px;
+    margin: 0 auto;
+    max-width: 100%;
+}
+
+.chat-message {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-bottom: 16px;
+}
+
+.message-bubble {
+    background-color: #ffffff;
+    border-radius: 8px;
+    padding: 8px 12px;
+    box-shadow: 0 1px 0.5px rgba(0, 0, 0, 0.13);
+    max-width: 80%;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+    position: relative;
+}
+
+.message-bubble:before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: -8px;
+    width: 8px;
+    height: 16px;
+    background-color: #ffffff;
+    clip-path: polygon(0 0, 100% 0, 100% 100%);
+}
+
+.message-time {
+    font-size: 11px;
+    color: #8c8c8c;
+    margin-top: 2px;
+    align-self: flex-end;
+}
+
+/* Tarjetas de estado en tiempo real */
+.status-card {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+.status-card.pulse {
+    animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+    0% {
+        box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(37, 211, 102, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+    }
+}
+
+/* Badge animado para estado en vivo */
+.live-badge {
+    display: inline-flex;
+    align-items: center;
+    background-color: #dc3545;
+    color: white;
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-size: 0.75rem;
+}
+
+.live-badge::before {
+    content: '';
+    display: inline-block;
+    width: 8px;
+    height: 8px;
+    margin-right: 0.5rem;
+    background-color: white;
+    border-radius: 50%;
+    animation: blink 1s infinite;
+}
+
+@keyframes blink {
+    0% { opacity: 1; }
+    50% { opacity: 0.3; }
+    100% { opacity: 1; }
+}
+
+/* Indicadores de estado */
+.status-indicator {
+    width: 15px;
+    height: 15px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 5px;
+}
+
+.status-indicator.online {
+    background-color: var(--accent-color);
+    box-shadow: 0 0 0 rgba(37, 211, 102, 0.4);
+    animation: pulse-green 2s infinite;
+}
+
+@keyframes pulse-green {
+    0% {
+        box-shadow: 0 0 0 0 rgba(37, 211, 102, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(37, 211, 102, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(37, 211, 102, 0);
+    }
+}
+
+.status-indicator.offline {
+    background-color: #dc3545;
+}
+
+.status-indicator.connecting {
+    background-color: #ffc107;
+}
+
+/* Animaciones de carga */
+.loading-bar {
+    height: 4px;
+    width: 100%;
+    position: relative;
+    overflow: hidden;
+    background-color: #ddd;
+    border-radius: 2px;
+}
+
+.loading-bar::before {
+    content: '';
+    display: block;
+    position: absolute;
+    left: -200px;
+    width: 200px;
+    height: 4px;
+    background-color: #25D366;
+    animation: loading 2s linear infinite;
+}
+
+@keyframes loading {
+    from {left: -200px; width: 30%;}
+    50% {width: 30%;}
+    70% {width: 70%;}
+    80% {left: 50%;}
+    95% {left: 120%;}
+    to {left: 100%;}
+}
+
+/* Botones mejorados */
+.btn-whatsapp {
+    background-color: var(--accent-color);
+    border-color: var(--accent-color);
+    color: white;
+    transition: all 0.3s;
+}
+
+.btn-whatsapp:hover {
+    background-color: var(--highlight-color);
+    border-color: var(--highlight-color);
+    color: white;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.btn-whatsapp:active {
+    transform: translateY(0);
+    box-shadow: none;
+}
+
+/* Efectos de hover en tarjetas */
+.feature-card {
+    transition: all 0.3s ease;
+    cursor: pointer;
+    border: none;
+    box-shadow: 0 0.15rem 1.75rem 0 rgba(58, 59, 69, 0.1);
+}
+
+.feature-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 0.5rem 1.75rem 0 rgba(58, 59, 69, 0.15);
+}
+
+/* Estilos adicionales para elementos específicos */
+.navbar {
+    border-bottom: 1px solid var(--border-color);
+}
+
+.sidebar .nav-link.active {
+    background-color: rgba(37, 211, 102, 0.2);
+    color: var(--accent-color);
+}
+
+.table {
+    color: var(--text-primary);
+    border-color: var(--border-color);
+}
+
+.footer {
+    background-color: var(--bg-secondary) !important;
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary) !important;
+}
+
+.text-muted {
+    color: var(--text-secondary) !important;
+}
+
+/* Estado de WhatsApp en navbar */
+#whatsappStatusIndicator {
+    display: flex;
+    align-items: center;
+}
+
+#navStatus .badge {
+    font-size: 0.65rem;
+    padding: 0.35em 0.65em;
+    display: flex;
+    align-items: center;
+    border-radius: 30px;
+}
+
+#navStatus .badge::before {
+    content: '';
+    display: inline-block;
+    width: 6px;
+    height: 6px;
+    margin-right: 4px;
+    border-radius: 50%;
+    background-color: white;
+}
+
+#navStatus .bg-success::before {
+    animation: pulse-green 2s infinite;
+}
+
+#navStatus .bg-warning::before {
+    animation: blink 1s infinite;
+}
+
+#navStatus .bg-danger::before {
+    background-color: #ff3b3b;
+}
+
+/* Vista previa de mensajes */
+.preview-container {
+    border: 1px solid #ddd;
+    border-radius: 8px;
+    padding: 16px;
+    margin-bottom: 16px;
+    background-color: #f8f9fa;
+    height: 300px;
+    overflow-y: auto;
+}
+
+.preview-toolbar {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 16px;
+}
+
+/* Los estilos de estadísticas se han eliminado */
+
+/* Efecto de transición para elementos */
+.fade-in {
+    opacity: 0;
+    transform: translateY(20px);
+    transition: opacity 0.5s ease, transform 0.5s ease;
+}
+
+.fade-in.visible {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Tooltips personalizados */
+.custom-tooltip {
+    --bs-tooltip-bg: #25D366;
+    --bs-tooltip-color: #fff;
+}
+
+/* QR Code mejorado */
+.qr-container {
+    padding: 16px;
+    background-color: white;
+    border-radius: 8px;
+    display: inline-block;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+    margin: 0 auto;
+    position: relative;
+}
+
+.qr-container::after {
+    content: 'Escanea con WhatsApp';
+    position: absolute;
+    bottom: -25px;
+    left: 0;
+    width: 100%;
+    text-align: center;
+    font-size: 0.8rem;
+    color: #666;
+}
+
+/* Barra de navegación pegajosa */
+.sticky-nav {
+    position: sticky;
+    top: 0;
+    z-index: 1020;
+}
+
+/* Mejoras para dispositivos móviles */
+@media (max-width: 768px) {
+    .whatsapp-preview {
+        margin: 0 -15px;
+        border-radius: 0;
+    }
+    
+    .qr-container {
+        width: 100%;
+    }
+    
+    .message-bubble {
+        max-width: 90%;
+    }
+}

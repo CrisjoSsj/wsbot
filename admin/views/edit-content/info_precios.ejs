@@ -1,0 +1,358 @@
+<%- include('../layout', {
+    pageTitle: 'Información de Precios',
+    activeTab: 'content',
+    username: username,
+    showMessages: true,
+    body: `
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="/admin/edit/content">Gestionar contenido</a></li>
+                    <li class="breadcrumb-item active">Información de Precios</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0 text-gray-800">Información de Precios</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Editar Información General de Precios</h6>
+                </div>
+                <div class="card-body">
+                    <form id="contentForm">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="title" name="title" value="${content?.title || 'INFORMACIÓN DE PRECIOS'}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción general</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" required>${content?.description || 'Precios: consulta nuestro catálogo en línea o pide una lista por mensaje para recibir los precios actualizados.'}</textarea>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Opciones relacionadas</label>
+                            <div id="relatedOptions">
+                                ${(content?.relatedOptions || [
+                                    "Envía *3* para ver la lista de precios actual",
+                                    "Envía *7* para ver el catálogo completo con detalles"
+                                ]).map((option, index) => `
+                                <div class="input-group mb-2 option-row">
+                                    <input type="text" class="form-control" name="relatedOptions[]" value="${option}" required>
+                                    <button type="button" class="btn btn-outline-danger remove-option"><i class="bi bi-trash"></i></button>
+                                </div>
+                                `).join('')}
+                            </div>
+                            <button type="button" id="addRelatedOption" class="btn btn-sm btn-outline-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Añadir opción
+                            </button>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Promociones activas</label>
+                            <div id="promotionsContainer">
+                                ${(content?.promotions || [
+                                    "10% de descuento en tu primera compra",
+                                    "15% de descuento comprando 3 o más artículos",
+                                    "Envío gratis en compras mayores a $60 USD"
+                                ]).map((promo, index) => `
+                                <div class="input-group mb-2 promo-row">
+                                    <input type="text" class="form-control" name="promotions[]" value="${promo}" required>
+                                    <button type="button" class="btn btn-outline-danger remove-promo"><i class="bi bi-trash"></i></button>
+                                </div>
+                                `).join('')}
+                            </div>
+                            <button type="button" id="addPromotion" class="btn btn-sm btn-outline-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Añadir promoción
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="footer" class="form-label">Pie de página</label>
+                            <input type="text" class="form-control" id="footer" name="footer" value="${content?.footer || '¿Tienes alguna pregunta sobre precios especiales? Envía *4* para contactar a un asesor.'}" required>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Opciones de menú</h6>
+                </div>
+                <div class="card-body">
+                    <form id="menuOptionForm">
+                        <div class="row align-items-center">
+                            <div class="col-auto">
+                                <div class="form-check form-switch">
+                                    <input class="form-check-input" type="checkbox" id="enableMenu" ${(config.menu?.options || []).some(o => o.key === 'info_precios') ? 'checked' : ''}>
+                                    <label class="form-check-label" for="enableMenu">Mostrar en el menú</label>
+                                </div>
+                            </div>
+                            <div class="col">
+                                <div class="row">
+                                    <div class="col-md-2">
+                                        <input type="text" class="form-control" id="menuNumber" placeholder="#" value="${(config.menu?.options || []).find(o => o.key === 'info_precios')?.number || '7'}" ${!(config.menu?.options || []).some(o => o.key === 'info_precios') ? 'disabled' : ''}>
+                                        <label class="form-text">Número</label>
+                                    </div>
+                                    <div class="col-md-2">
+                                        <input type="text" class="form-control" id="menuEmoji" placeholder="📊" value="${(config.menu?.options || []).find(o => o.key === 'info_precios')?.emoji || '📊'}" ${!(config.menu?.options || []).some(o => o.key === 'info_precios') ? 'disabled' : ''}>
+                                        <label class="form-text">Emoji</label>
+                                    </div>
+                                    <div class="col-md-8">
+                                        <input type="text" class="form-control" id="menuText" placeholder="Texto para el menú" value="${(config.menu?.options || []).find(o => o.key === 'info_precios')?.text || 'Información de precios'}" ${!(config.menu?.options || []).some(o => o.key === 'info_precios') ? 'disabled' : ''}>
+                                        <label class="form-text">Texto del botón</label>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-auto">
+                                <button type="submit" class="btn btn-primary">Guardar en menú</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Vista previa</h6>
+                </div>
+                <div class="card-body">
+                    <div class="preview-box p-3 border rounded bg-light" style="font-family: monospace; white-space: pre-wrap; min-height: 200px; max-height: 500px; overflow-y: auto;">
+                        <div id="contentPreview"><p class="text-center text-muted">La vista previa se generará al editar el contenido...</p></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Ayuda</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Consejos para la información de precios:</strong></p>
+                    <ul>
+                        <li>Mantén la información clara y concisa</li>
+                        <li>Incluye promociones actuales para destacarlas</li>
+                        <li>Añade referencias a otras opciones relacionadas</li>
+                        <li>Puedes usar formato <code>*texto*</code> para negrita</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    `,
+    extraScripts: `
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Manejar el envío del formulario de contenido
+            const contentForm = document.getElementById('contentForm');
+            contentForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const relatedOptions = Array.from(document.querySelectorAll('input[name="relatedOptions[]"]')).map(input => input.value);
+                const promotions = Array.from(document.querySelectorAll('input[name="promotions[]"]')).map(input => input.value);
+                
+                const formData = {
+                    title: document.getElementById('title').value,
+                    description: document.getElementById('description').value,
+                    relatedOptions: relatedOptions,
+                    promotions: promotions,
+                    footer: document.getElementById('footer').value
+                };
+                
+                fetch('/admin/api/content/info_precios', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Contenido guardado correctamente');
+                    } else {
+                        showAlert('danger', 'Error al guardar: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('danger', 'Error al comunicarse con el servidor');
+                });
+            });
+
+            // Manejar el envío del formulario de menú
+            const menuOptionForm = document.getElementById('menuOptionForm');
+            menuOptionForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const enableMenu = document.getElementById('enableMenu').checked;
+                
+                const formData = {
+                    key: 'info_precios',
+                    enabled: enableMenu,
+                    number: document.getElementById('menuNumber').value,
+                    text: document.getElementById('menuText').value,
+                    emoji: document.getElementById('menuEmoji').value
+                };
+                
+                fetch('/admin/api/menu-option', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Opción de menú guardada correctamente');
+                    } else {
+                        showAlert('danger', 'Error al guardar: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('danger', 'Error al comunicarse con el servidor');
+                });
+            });
+            
+            // Toggle para habilitar/deshabilitar campos del menú
+            document.getElementById('enableMenu').addEventListener('change', function() {
+                const enabled = this.checked;
+                document.getElementById('menuNumber').disabled = !enabled;
+                document.getElementById('menuEmoji').disabled = !enabled;
+                document.getElementById('menuText').disabled = !enabled;
+            });
+            
+            // Agregar nueva opción relacionada
+            document.getElementById('addRelatedOption').addEventListener('click', function() {
+                const container = document.getElementById('relatedOptions');
+                const newRow = document.createElement('div');
+                newRow.className = 'input-group mb-2 option-row';
+                newRow.innerHTML = 
+                    '<input type="text" class="form-control" name="relatedOptions[]" value="" required>' +
+                    '<button type="button" class="btn btn-outline-danger remove-option"><i class="bi bi-trash"></i></button>';
+                container.appendChild(newRow);
+                updatePreview();
+            });
+            
+            // Eliminar opción relacionada (delegación de eventos)
+            document.getElementById('relatedOptions').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-option') || e.target.parentElement.classList.contains('remove-option')) {
+                    const button = e.target.classList.contains('remove-option') ? e.target : e.target.parentElement;
+                    const row = button.closest('.option-row');
+                    row.remove();
+                    updatePreview();
+                }
+            });
+            
+            // Agregar nueva promoción
+            document.getElementById('addPromotion').addEventListener('click', function() {
+                const container = document.getElementById('promotionsContainer');
+                const newRow = document.createElement('div');
+                newRow.className = 'input-group mb-2 promo-row';
+                newRow.innerHTML = 
+                    '<input type="text" class="form-control" name="promotions[]" value="" required>' +
+                    '<button type="button" class="btn btn-outline-danger remove-promo"><i class="bi bi-trash"></i></button>';
+                container.appendChild(newRow);
+                updatePreview();
+            });
+            
+            // Eliminar promoción (delegación de eventos)
+            document.getElementById('promotionsContainer').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-promo') || e.target.parentElement.classList.contains('remove-promo')) {
+                    const button = e.target.classList.contains('remove-promo') ? e.target : e.target.parentElement;
+                    const row = button.closest('.promo-row');
+                    row.remove();
+                    updatePreview();
+                }
+            });
+            
+            // Actualizar vista previa en tiempo real
+            const inputs = [
+                document.getElementById('title'),
+                document.getElementById('description'),
+                document.getElementById('footer')
+            ];
+            
+            inputs.forEach(input => {
+                input.addEventListener('input', updatePreview);
+            });
+            
+            // También actualizar cuando cambian las opciones y promociones
+            document.getElementById('relatedOptions').addEventListener('input', updatePreview);
+            document.getElementById('promotionsContainer').addEventListener('input', updatePreview);
+            
+            // Actualizar vista previa inicial
+            updatePreview();
+            
+            function updatePreview() {
+                const title = document.getElementById('title').value || 'INFORMACIÓN DE PRECIOS';
+                const description = document.getElementById('description').value || '';
+                const footer = document.getElementById('footer').value || '';
+                
+                const relatedOptions = Array.from(document.querySelectorAll('input[name="relatedOptions[]"]'))
+                    .map(input => '• ' + input.value)
+                    .join('\\n');
+                
+                const promotions = Array.from(document.querySelectorAll('input[name="promotions[]"]'))
+                    .map(input => '• ' + input.value)
+                    .join('\\n');
+                
+                let preview = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                preview += '💲 *' + title + '* 💲\\n';
+                preview += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                
+                if (description) {
+                    preview += description + '\\n\\n';
+                }
+                
+                if (relatedOptions) {
+                    preview += relatedOptions + '\\n\\n';
+                }
+                
+                if (promotions) {
+                    preview += '*PROMOCIONES ACTIVAS:*\\n' + promotions + '\\n\\n';
+                }
+                
+                if (footer) {
+                    preview += '━━━━━━━━━━━━━━━━━━━━━━\\n' + footer;
+                }
+                
+                document.getElementById('contentPreview').innerHTML = '<pre>' + preview + '</pre>';
+            }
+        });
+
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
+            alertDiv.innerHTML = 
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            alertContainer.appendChild(alertDiv);
+
+            // Auto-cerrar después de 5 segundos
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    alertContainer.removeChild(alertDiv);
+                }, 150);
+            }, 5000);
+        }
+    </script>
+    `
+}) %>

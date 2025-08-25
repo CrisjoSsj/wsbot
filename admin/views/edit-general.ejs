@@ -1,0 +1,213 @@
+<%- include('layout', {
+    pageTitle: 'Configuración General',
+    activeTab: 'content',
+    username: username,
+    showMessages: true,
+    body: `
+            <style>
+                body, .container, .row, .card, .card-header, .card-body, .breadcrumb, .preview-box {
+                    background: var(--bg-primary, #181c24) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                }
+                .card, .feature-card, .stat-card, .shadow {
+                    background: var(--card-bg, #232836) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                    border: none !important;
+                    box-shadow: 0 0.15rem 1.75rem 0 #10131a99 !important;
+                }
+                .card-header, .feature-card .card-header, .stat-card .card-header {
+                    background: var(--bg-secondary, #232836) !important;
+                    color: var(--accent-color, #25D366) !important;
+                    border-bottom: 1px solid var(--border-color, #333) !important;
+                }
+                .breadcrumb {
+                    background: transparent !important;
+                    color: var(--text-secondary, #b0b0b0) !important;
+                }
+                .form-control, .input-group-text {
+                    background: #232836 !important;
+                    color: #f1f1f1 !important;
+                    border: 1px solid var(--border-color, #333) !important;
+                }
+                .form-control:focus {
+                    background: #232836 !important;
+                    color: #fff !important;
+                    border-color: var(--accent-color, #25D366) !important;
+                    box-shadow: 0 0 0 0.2rem #25d36633;
+                }
+                .btn-primary, .btn-outline-primary, .btn-success, .btn-outline-success {
+                    background: var(--accent-color, #25D366) !important;
+                    border: none !important;
+                    color: #181c24 !important;
+                    font-weight: bold;
+                }
+                .btn-primary:hover, .btn-outline-primary:hover, .btn-success:hover, .btn-outline-success:hover {
+                    background: var(--highlight-color, #128C7E) !important;
+                    color: #fff !important;
+                }
+                .btn-outline-secondary, .btn-outline-secondary:hover {
+                    background: transparent !important;
+                    color: var(--accent-color, #25D366) !important;
+                    border: 1px solid var(--accent-color, #25D366) !important;
+                }
+                .alert-info {
+                    background: #1a232d !important;
+                    color: #b3e6c7 !important;
+                    border: 1px solid #25D366 !important;
+                }
+                .alert-success {
+                    background: #1d2b1d !important;
+                    color: #b3e6c7 !important;
+                    border: 1px solid #25D366 !important;
+                }
+                .alert-danger {
+                    background: #2d1a1a !important;
+                    color: #ffb3b3 !important;
+                    border: 1px solid #ff3b3b !important;
+                }
+                .text-primary, .text-info, .text-gray-800, .font-weight-bold, .h3, .h4, .h5, .h6 {
+                    color: var(--accent-color, #25D366) !important;
+                }
+                .border-left-primary, .border-left-info, .border-left-warning {
+                    border-left: 4px solid var(--accent-color, #25D366) !important;
+                }
+                .bg-primary, .bg-info, .bg-light, .bg-white {
+                    background: var(--card-bg, #232836) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                }
+                .text-muted {
+                    color: var(--text-secondary, #b0b0b0) !important;
+                }
+                .stat-number, .status-indicator.online {
+                    color: var(--accent-color, #25D366) !important;
+                }
+                .feature-card:hover {
+                    box-shadow: 0 0.5rem 1.75rem 0 #25d36633 !important;
+                    border: 1px solid var(--accent-color, #25D366) !important;
+                }
+            </style>
+        <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Configuración General</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0" style="color: #25D366;">Configuración General</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold" style="color: #25D366;">Datos Generales</h6>
+                </div>
+                <div class="card-body">
+                    <form id="generalForm">
+                        <div class="mb-3">
+                            <label for="storeName" class="form-label">Nombre de la Tienda</label>
+                            <input type="text" class="form-control" id="storeName" name="storeName" value="${config.storeName || ''}" required>
+                            <div class="form-text" style="color: #b3e6c7;">Este nombre aparecerá en los mensajes y saludos del bot.</div>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold" style="color: #25D366;">Ayuda</h6>
+                </div>
+                <div class="card-body">
+                    <p style="color: #f1f1f1;">La configuración general incluye:</p>
+                    <ul>
+                        <li><strong style="color: #25D366;">Nombre de la Tienda:</strong> <span style="color: #f1f1f1;">Aparece en los mensajes de bienvenida y otros textos.</span></li>
+                    </ul>
+                    <p style="color: #b3e6c7;">Los cambios se guardan automáticamente en el archivo de configuración y estarán disponibles inmediatamente para el bot.</p>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold" style="color: #25D366;">Vista Previa</h6>
+                </div>
+                <div class="card-body">
+                    <div class="preview-box p-3 border rounded bg-light">
+                        <p><strong>Nombre de la tienda:</strong> <span id="previewStoreName">${config.storeName || 'Sin definir'}</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    `,
+    extraScripts: `
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Manejar el envío del formulario
+            const form = document.getElementById('generalForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const formData = {
+                    storeName: document.getElementById('storeName').value
+                };
+                
+                fetch('/admin/api/config/general', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Configuración general guardada correctamente');
+                    } else {
+                        showAlert('danger', 'Error al guardar: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('danger', 'Error al comunicarse con el servidor');
+                });
+            });
+            
+            // Actualizar vista previa en tiempo real
+            const storeNameInput = document.getElementById('storeName');
+            const previewStoreName = document.getElementById('previewStoreName');
+            
+            storeNameInput.addEventListener('input', function() {
+                previewStoreName.textContent = this.value || 'Sin definir';
+            });
+        });
+
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
+            alertDiv.innerHTML = 
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            alertContainer.appendChild(alertDiv);
+
+            // Auto-cerrar después de 5 segundos
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    alertContainer.removeChild(alertDiv);
+                }, 150);
+            }, 5000);
+        }
+    </script>
+    `
+}) %>

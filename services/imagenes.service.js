@@ -13,6 +13,9 @@ const CATALOGO_DIR = path.join(MEDIA_DIR, 'catalogo');
 const SOLICITUDES_JSON = path.join(DATA_DIR, 'solicitudes.json');
 const CATALOGO_JSON = path.join(DATA_DIR, 'catalogo.json');
 
+// Configuración 
+const PHASH_MAX_DISTANCE = Number(process.env.PHASH_MAX_DISTANCE || 10);
+
 // funcion para asegurar que un directorio exista
 function asegurarDirectorio(dirPath) {
   if (!fs.existsSync(dirPath)) fs.mkdirSync(dirPath, { recursive: true });
@@ -24,14 +27,23 @@ function cargarArregloJson(filePath) {
     if (!fs.existsSync(filePath)) return [];
     const raw = fs.readFileSync(filePath, 'utf8');
     return JSON.parse(raw) || [];
-  } catch (_e) {
+  } catch (e) {
+    console.error(`Error al cargar archivo JSON ${filePath}:`, e.message);
     return [];
   }
 }
 
 // funcion para guardar un arreglo en un archivo json (con formato)
 function guardarArregloJson(filePath, data) {
-  fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+  try {
+    // Asegurarse que el directorio existe
+    const dirPath = path.dirname(filePath);
+    asegurarDirectorio(dirPath);
+    fs.writeFileSync(filePath, JSON.stringify(data, null, 2), 'utf8');
+  } catch (e) {
+    console.error(`Error al guardar archivo JSON ${filePath}:`, e.message);
+    throw e; // Relanzar el error para que se pueda manejar más arriba
+  }
 }
 
 // funcion para obtener la extension desde el mimetype
@@ -53,10 +65,15 @@ function calcularHashSha256(buffer) {
 
 // funcion para calcular pHash (perceptual hash) en formato hexadecimal
 async function calcularPHashHex(buffer) {
-  const img = await Jimp.read(buffer);
-  // Jimp.hash() devuelve un hash perceptual; por defecto longitud ~64 bits representado en hex
-  // Devolvemos tal cual para comparaciones por distancia Hamming
-  return img.hash();
+  try {
+    const img = await Jimp.read(buffer);
+    // Jimp.hash() devuelve un hash perceptual; por defecto longitud ~64 bits representado en hex
+    // Devolvemos tal cual para comparaciones por distancia Hamming
+    return img.hash();
+  } catch (e) {
+    console.error('Error al generar pHash para imagen:', e.message);
+    return null; // Devolver null en caso de error para poder manejarlo adecuadamente
+  }
 }
 
 // funcion para calcular la distancia de Hamming entre dos hashes hexadecimales
@@ -78,61 +95,98 @@ function distanciaHammingHex(hexA, hexB) {
 
 // funcion para guardar una imagen de solicitud del usuario
 async function guardarImagenDeSolicitud(chatId, media, caption) {
-  asegurarDirectorio(DATA_DIR);
-  asegurarDirectorio(SOLICITUDES_DIR);
-  const timestamp = Date.now();
-  const ext = obtenerExtensionDesdeMime(media.mimetype);
-  const nombre = `${timestamp}_${sanearId(chatId)}.${ext}`;
-  const ruta = path.join(SOLICITUDES_DIR, nombre);
-  const buffer = Buffer.from(media.data, 'base64');
-  fs.writeFileSync(ruta, buffer);
-  const hash = calcularHashSha256(buffer);
-  const phash = await calcularPHashHex(buffer);
+  try {
+    if (!media || !media.data) {
+      throw new Error('No se proporcionaron datos de media válidos');
+    }
+    
+    // Asegurar directorios
+    asegurarDirectorio(DATA_DIR);
+    asegurarDirectorio(SOLICITUDES_DIR);
+    
+    const timestamp = Date.now();
+    const ext = obtenerExtensionDesdeMime(media.mimetype);
+    const nombre = `${timestamp}_${sanearId(chatId)}.${ext}`;
+    const ruta = path.join(SOLICITUDES_DIR, nombre);
+    
+    // Convertir y guardar imagen
+    const buffer = Buffer.from(media.data, 'base64');
+    fs.writeFileSync(ruta, buffer);
+    
+    // Calcular hashes
+    const hash = calcularHashSha256(buffer);
+    const phash = await calcularPHashHex(buffer);
 
-  const solicitudes = cargarArregloJson(SOLICITUDES_JSON);
-  const meta = {
-    id: `sol_${timestamp}`,
-    chatId,
-    timestamp,
-    ruta,
-    mimetype: media.mimetype,
-    hash,
-    phash,
-    caption: caption || ''
-  };
-  solicitudes.push(meta);
-  guardarArregloJson(SOLICITUDES_JSON, solicitudes);
-  return meta;
+    // Guardar metadata
+    const solicitudes = cargarArregloJson(SOLICITUDES_JSON);
+    const meta = {
+      id: `sol_${timestamp}`,
+      chatId,
+      timestamp,
+      ruta,
+      mimetype: media.mimetype,
+      hash,
+      phash,
+      caption: caption || ''
+    };
+    solicitudes.push(meta);
+    guardarArregloJson(SOLICITUDES_JSON, solicitudes);
+    
+    return meta;
+  } catch (error) {
+    console.error('Error al guardar imagen de solicitud:', error);
+    throw error; // Re-lanzar para manejar en el nivel superior
+  }
 }
 
 // funcion para guardar una imagen en el catálogo (admin)
 async function guardarImagenEnCatalogo(etiqueta, chatId, media, caption) {
-  asegurarDirectorio(DATA_DIR);
-  asegurarDirectorio(CATALOGO_DIR);
-  const timestamp = Date.now();
-  const ext = obtenerExtensionDesdeMime(media.mimetype);
-  const nombre = `${timestamp}_${slug(etiqueta)}.${ext}`;
-  const ruta = path.join(CATALOGO_DIR, nombre);
-  const buffer = Buffer.from(media.data, 'base64');
-  fs.writeFileSync(ruta, buffer);
-  const hash = calcularHashSha256(buffer);
-  const phash = await calcularPHashHex(buffer);
-
-  const catalogo = cargarArregloJson(CATALOGO_JSON);
-  const meta = {
-    id: `cat_${timestamp}`,
-    etiqueta,
-    chatId,
-    timestamp,
-    ruta,
-    mimetype: media.mimetype,
-    hash,
-    phash,
-    caption: caption || ''
-  };
-  catalogo.push(meta);
-  guardarArregloJson(CATALOGO_JSON, catalogo);
-  return meta;
+  try {
+    if (!etiqueta) {
+      throw new Error('Se requiere una etiqueta para la imagen del catálogo');
+    }
+    if (!media || !media.data) {
+      throw new Error('No se proporcionaron datos de media válidos');
+    }
+    
+    // Asegurar directorios
+    asegurarDirectorio(DATA_DIR);
+    asegurarDirectorio(CATALOGO_DIR);
+    
+    const timestamp = Date.now();
+    const ext = obtenerExtensionDesdeMime(media.mimetype);
+    const nombre = `${timestamp}_${slug(etiqueta)}.${ext}`;
+    const ruta = path.join(CATALOGO_DIR, nombre);
+    
+    // Convertir y guardar imagen
+    const buffer = Buffer.from(media.data, 'base64');
+    fs.writeFileSync(ruta, buffer);
+    
+    // Calcular hashes
+    const hash = calcularHashSha256(buffer);
+    const phash = await calcularPHashHex(buffer);
+    
+    // Guardar metadata
+    const catalogo = cargarArregloJson(CATALOGO_JSON);
+    const meta = {
+      id: `cat_${timestamp}`,
+      etiqueta,
+      chatId,
+      timestamp,
+      ruta,
+      mimetype: media.mimetype,
+      hash,
+      phash,
+      caption: caption || ''
+    };
+    catalogo.push(meta);
+    guardarArregloJson(CATALOGO_JSON, catalogo);
+    
+    return meta;
+  } catch (error) {
+    console.error('Error al guardar imagen en catálogo:', error);
+    throw error; // Re-lanzar para manejar en el nivel superior
+  }
 }
 
 // funcion para buscar coincidencia exacta por hash en el catalogo
@@ -142,10 +196,17 @@ function buscarCoincidenciaExactaPorHash(hash) {
 }
 
 // funcion para buscar la mejor coincidencia por pHash segun umbral
-function buscarCoincidenciaPorPHash(phash, umbral = Number(process.env.PHASH_MAX_DISTANCE || 10)) {
+function buscarCoincidenciaPorPHash(phash, umbral = PHASH_MAX_DISTANCE) {
   const catalogo = cargarArregloJson(CATALOGO_JSON);
   let mejor = null;
   let mejorDist = Infinity;
+
+  // Validar que phash sea un valor válido
+  if (!phash) {
+    console.warn('Se intentó buscar con un phash vacío o inválido');
+    return null;
+  }
+
   for (const item of catalogo) {
     if (!item.phash) continue;
     const d = distanciaHammingHex(phash, item.phash);
@@ -175,11 +236,110 @@ function slug(v) {
     .replace(/(^-|-$)+/g, '');
 }
 
+/**
+ * Elimina imágenes antiguas para optimizar el almacenamiento
+ * @param {number} diasAntiguedad - Días de antigüedad para eliminar (por defecto 30)
+ * @returns {Object} Resultado con las imágenes eliminadas
+ */
+async function limpiarImagenesAntiguas(diasAntiguedad = 30) {
+  try {
+    const tiempoLimite = Date.now() - (diasAntiguedad * 24 * 60 * 60 * 1000);
+    let eliminadas = { solicitudes: 0, catalogo: 0 };
+    
+    // Limpiar solicitudes antiguas
+    const solicitudes = cargarArregloJson(SOLICITUDES_JSON);
+    const solicitudesActualizadas = solicitudes.filter(item => {
+      if (item.timestamp < tiempoLimite) {
+        if (fs.existsSync(item.ruta)) {
+          try {
+            fs.unlinkSync(item.ruta);
+            eliminadas.solicitudes++;
+            return false;
+          } catch (e) {
+            console.error(`Error al eliminar archivo ${item.ruta}:`, e.message);
+          }
+        }
+      }
+      return true;
+    });
+    
+    if (solicitudes.length !== solicitudesActualizadas.length) {
+      guardarArregloJson(SOLICITUDES_JSON, solicitudesActualizadas);
+    }
+    
+    return { eliminadas, status: 'success' };
+  } catch (error) {
+    console.error('Error al limpiar imágenes antiguas:', error);
+    return { 
+      status: 'error', 
+      message: error.message,
+      eliminadas: { solicitudes: 0, catalogo: 0 }
+    };
+  }
+}
+
+/**
+ * Obtiene estadísticas del almacenamiento de imágenes
+ * @returns {Object} Estadísticas de imágenes
+ */
+function obtenerEstadisticasImagenes() {
+  try {
+    const solicitudes = cargarArregloJson(SOLICITUDES_JSON);
+    const catalogo = cargarArregloJson(CATALOGO_JSON);
+    
+    let tamanoTotalSolicitudes = 0;
+    let tamanoTotalCatalogo = 0;
+    
+    // Calcular tamaño de archivos de solicitudes
+    solicitudes.forEach(item => {
+      if (fs.existsSync(item.ruta)) {
+        try {
+          const stats = fs.statSync(item.ruta);
+          tamanoTotalSolicitudes += stats.size;
+        } catch (e) {}
+      }
+    });
+    
+    // Calcular tamaño de archivos de catálogo
+    catalogo.forEach(item => {
+      if (fs.existsSync(item.ruta)) {
+        try {
+          const stats = fs.statSync(item.ruta);
+          tamanoTotalCatalogo += stats.size;
+        } catch (e) {}
+      }
+    });
+    
+    return {
+      solicitudes: {
+        cantidad: solicitudes.length,
+        tamanoTotal: tamanoTotalSolicitudes,
+        tamanoMB: Math.round(tamanoTotalSolicitudes / (1024 * 1024) * 100) / 100
+      },
+      catalogo: {
+        cantidad: catalogo.length,
+        tamanoTotal: tamanoTotalCatalogo,
+        tamanoMB: Math.round(tamanoTotalCatalogo / (1024 * 1024) * 100) / 100
+      },
+      total: {
+        cantidad: solicitudes.length + catalogo.length,
+        tamanoTotal: tamanoTotalSolicitudes + tamanoTotalCatalogo,
+        tamanoMB: Math.round((tamanoTotalSolicitudes + tamanoTotalCatalogo) / (1024 * 1024) * 100) / 100
+      }
+    };
+  } catch (error) {
+    console.error('Error al obtener estadísticas de imágenes:', error);
+    return { error: error.message };
+  }
+}
+
 module.exports = {
   guardarImagenDeSolicitud,
   guardarImagenEnCatalogo,
   buscarCoincidenciaExactaPorHash,
-  buscarCoincidenciaPorPHash
+  buscarCoincidenciaPorPHash,
+  limpiarImagenesAntiguas,
+  obtenerEstadisticasImagenes
 };
 
 

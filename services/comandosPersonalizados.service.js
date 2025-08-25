@@ -1,21 +1,26 @@
 'use strict';
 
-const { botConfig, guardarConfigEnDisco } = require('../config/botConfig');
+const botConfig = require('../config/botConfig');
 
 // funcion para agregar o actualizar un comando personalizado
 function agregarComandoPersonalizado(palabra, respuesta) {
   if (!palabra || !respuesta) return false;
-  botConfig.customCommands[palabra] = respuesta;
-  guardarConfigEnDisco();
+  const config = botConfig.obtenerConfiguracion();
+  if (!config.customCommands) config.customCommands = {};
+  config.customCommands[palabra] = respuesta;
+  // Usar guardarConfiguracion para aplicar sanitización central antes de persistir
+  botConfig.guardarConfiguracion(config);
   return true;
 }
 
 // funcion para eliminar un comando personalizado existente
 function eliminarComandoPersonalizado(palabra) {
   if (!palabra) return false;
-  if (botConfig.customCommands[palabra]) {
-    delete botConfig.customCommands[palabra];
-    guardarConfigEnDisco();
+  const config = botConfig.obtenerConfiguracion();
+  if (config.customCommands && config.customCommands[palabra]) {
+  delete config.customCommands[palabra];
+  // Usar guardarConfiguracion para aplicar sanitización central antes de persistir
+  botConfig.guardarConfiguracion(config);
     return true;
   }
   return false;
@@ -23,7 +28,9 @@ function eliminarComandoPersonalizado(palabra) {
 
 // funcion para listar todos los comandos personalizados
 function listarComandosPersonalizados() {
-  return Object.entries(botConfig.customCommands);
+  const config = botConfig.obtenerConfiguracion();
+  if (!config.customCommands) return [];
+  return Object.entries(config.customCommands);
 }
 
 module.exports = {

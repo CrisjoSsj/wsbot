@@ -1,0 +1,1225 @@
+<%- include('layout', {
+    pageTitle: 'Editar Contenido',
+    activeTab: 'content',
+    username: username,
+    showMessages: true,
+    body: `
+            <style>
+                body, .container, .row, .card, .card-header, .card-body, .breadcrumb, .preview-box {
+                    background: var(--bg-primary, #181c24) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                }
+                .card, .feature-card, .stat-card, .shadow {
+                    background: var(--card-bg, #232836) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                    border: none !important;
+                    box-shadow: 0 0.15rem 1.75rem 0 #10131a99 !important;
+                }
+                .card-header, .feature-card .card-header, .stat-card .card-header {
+                    background: var(--bg-secondary, #232836) !important;
+                    color: var(--accent-color, #25D366) !important;
+                    border-bottom: 1px solid var(--border-color, #333) !important;
+                }
+                .breadcrumb {
+                    background: transparent !important;
+                    color: var(--text-secondary, #b0b0b0) !important;
+                }
+                .form-control, .input-group-text {
+                    background: #232836 !important;
+                    color: #f1f1f1 !important;
+                    border: 1px solid var(--border-color, #333) !important;
+                }
+                .form-control:focus {
+                    background: #232836 !important;
+                    color: #fff !important;
+                    border-color: var(--accent-color, #25D366) !important;
+                    box-shadow: 0 0 0 0.2rem #25d36633;
+                }
+                .btn-primary, .btn-outline-primary, .btn-success, .btn-outline-success {
+                    background: var(--accent-color, #25D366) !important;
+                    border: none !important;
+                    color: #181c24 !important;
+                    font-weight: bold;
+                }
+                .btn-primary:hover, .btn-outline-primary:hover, .btn-success:hover, .btn-outline-success:hover {
+                    background: var(--highlight-color, #128C7E) !important;
+                    color: #fff !important;
+                }
+                .btn-outline-secondary, .btn-outline-secondary:hover {
+                    background: transparent !important;
+                    color: var(--accent-color, #25D366) !important;
+                    border: 1px solid var(--accent-color, #25D366) !important;
+                }
+                .alert-info {
+                    background: #1a232d !important;
+                    color: #b3e6c7 !important;
+                    border: 1px solid #25D366 !important;
+                }
+                .alert-success {
+                    background: #1d2b1d !important;
+                    color: #b3e6c7 !important;
+                    border: 1px solid #25D366 !important;
+                }
+                .alert-danger {
+                    background: #2d1a1a !important;
+                    color: #ffb3b3 !important;
+                    border: 1px solid #ff3b3b !important;
+                }
+                .text-primary, .text-info, .text-gray-800, .font-weight-bold, .h3, .h4, .h5, .h6 {
+                    color: var(--accent-color, #25D366) !important;
+                }
+                .border-left-primary, .border-left-info, .border-left-warning {
+                    border-left: 4px solid var(--accent-color, #25D366) !important;
+                }
+                .bg-primary, .bg-info, .bg-light, .bg-white {
+                    background: var(--card-bg, #232836) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                }
+                .text-muted {
+                    color: var(--text-secondary, #b0b0b0) !important;
+                }
+                .stat-number, .status-indicator.online {
+                    color: var(--accent-color, #25D366) !important;
+                }
+                .feature-card:hover {
+                    box-shadow: 0 0.5rem 1.75rem 0 #25d36633 !important;
+                    border: 1px solid var(--accent-color, #25D366) !important;
+                }
+            </style>
+        <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Editar ${section.charAt(0).toUpperCase() + section.slice(1)}</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0 text-gray-800">Editar ${section.charAt(0).toUpperCase() + section.slice(1)}</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Personalizar Contenido</h6>
+                </div>
+                <div class="card-body">
+                    <form id="contentForm">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="title" name="title" value="${config.content?.[section]?.title || ''}" required>
+                        </div>
+
+                        ${section === 'horario' || section === 'envio' ? `
+                        <div class="mb-3">
+                            <label class="form-label">Secciones</label>
+                            <div id="sectionsList">
+                                ${(config.content?.[section]?.sections || []).map((item, index) => `
+                                <div class="card mb-3 section-item">
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <label class="form-label">Título de sección</label>
+                                            <input type="text" class="form-control section-title" value="${item.title || ''}" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Contenido</label>
+                                            <textarea class="form-control section-content" rows="2" required>${item.content || ''}</textarea>
+                                        </div>
+                                        ${index > 0 ? `<button type="button" class="btn btn-sm btn-outline-danger remove-section mt-2"><i class="bi bi-trash"></i> Eliminar sección</button>` : ''}
+                                    </div>
+                                </div>
+                                `).join('') || `
+                                <div class="card mb-3 section-item">
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <label class="form-label">Título de sección</label>
+                                            <input type="text" class="form-control section-title" value="Horario" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Contenido</label>
+                                            <textarea class="form-control section-content" rows="2" required></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                `}
+                            </div>
+                            <button type="button" id="addSection" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-plus-circle"></i> Añadir sección
+                            </button>
+                        </div>
+                        ` : ''}
+
+                        ${section === 'pago' ? `
+                        <div class="mb-3">
+                            <label class="form-label">Métodos de Pago</label>
+                            <div id="methodsList">
+                                ${(config.content?.[section]?.methods || []).map((item, index) => `
+                                <div class="card mb-3 method-item">
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <label class="form-label">Nombre del método</label>
+                                            <input type="text" class="form-control method-name" value="${item.name || ''}" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Detalles</label>
+                                            ${typeof item.details === 'string' ?
+                                                `<textarea class="form-control method-details" rows="2" required>${item.details || ''}</textarea>` :
+                                                `<div class="method-details-list">
+                                                    ${(item.details || []).map((detail, detailIndex) => `
+                                                        <div class="input-group mb-2 detail-row">
+                                                            <input type="text" class="form-control detail-item" value="${detail || ''}" required>
+                                                            ${detailIndex > 0 ? `<button type="button" class="btn btn-outline-danger remove-detail"><i class="bi bi-trash"></i></button>` : ''}
+                                                        </div>
+                                                    `).join('')}
+                                                    <button type="button" class="btn btn-sm btn-outline-secondary add-detail mt-2">
+                                                        <i class="bi bi-plus-circle"></i> Añadir detalle
+                                                    </button>
+                                                </div>`
+                                            }
+                                        </div>
+                                        ${index > 0 ? `<button type="button" class="btn btn-sm btn-outline-danger remove-method mt-2"><i class="bi bi-trash"></i> Eliminar método</button>` : ''}
+                                    </div>
+                                </div>
+                                `).join('') || `
+                                <div class="card mb-3 method-item">
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <label class="form-label">Nombre del método</label>
+                                            <input type="text" class="form-control method-name" value="" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Detalles</label>
+                                            <textarea class="form-control method-details" rows="2" required></textarea>
+                                        </div>
+                                    </div>
+                                </div>
+                                `}
+                            </div>
+                            <button type="button" id="addMethod" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-plus-circle"></i> Añadir método de pago
+                            </button>
+                        </div>
+                        ` : ''}
+
+                        ${section === 'direcciones' ? `
+                        <div class="mb-3">
+                            <label class="form-label">Ubicaciones</label>
+                            <div id="locationsList">
+                                ${(config.content?.[section]?.locations || []).map((item, index) => `
+                                <div class="card mb-3 location-item">
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <label class="form-label">Nombre de la ubicación</label>
+                                            <input type="text" class="form-control location-name" value="${item.name || ''}" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Detalles</label>
+                                            <div class="location-details-list">
+                                                ${(item.details || []).map((detail, detailIndex) => `
+                                                    <div class="input-group mb-2 detail-row">
+                                                        <input type="text" class="form-control detail-item" value="${detail || ''}" required>
+                                                        ${detailIndex > 0 ? `<button type="button" class="btn btn-outline-danger remove-detail"><i class="bi bi-trash"></i></button>` : ''}
+                                                    </div>
+                                                `).join('')}
+                                                <button type="button" class="btn btn-sm btn-outline-secondary add-detail mt-2">
+                                                    <i class="bi bi-plus-circle"></i> Añadir detalle
+                                                </button>
+                                            </div>
+                                        </div>
+                                        ${index > 0 ? `<button type="button" class="btn btn-sm btn-outline-danger remove-location mt-2"><i class="bi bi-trash"></i> Eliminar ubicación</button>` : ''}
+                                    </div>
+                                </div>
+                                `).join('') || `
+                                <div class="card mb-3 location-item">
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <label class="form-label">Nombre de la ubicación</label>
+                                            <input type="text" class="form-control location-name" value="" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Detalles</label>
+                                            <div class="location-details-list">
+                                                <div class="input-group mb-2 detail-row">
+                                                    <input type="text" class="form-control detail-item" value="" required>
+                                                </div>
+                                                <button type="button" class="btn btn-sm btn-outline-secondary add-detail mt-2">
+                                                    <i class="bi bi-plus-circle"></i> Añadir detalle
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                `}
+                            </div>
+                            <button type="button" id="addLocation" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-plus-circle"></i> Añadir ubicación
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="reminder" class="form-label">Recordatorio de horarios</label>
+                            <textarea class="form-control" id="reminder" name="reminder" rows="2">${config.content?.[section]?.reminder || ''}</textarea>
+                        </div>
+                        ` : ''}
+
+                        ${section === 'precios' ? `
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Mensaje</label>
+                            <textarea class="form-control" id="message" name="message" rows="2" required>${config.content?.[section]?.message || ''}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Opciones</label>
+                            <div id="optionsList">
+                                ${(config.content?.[section]?.options || []).map((option, index) => `
+                                <div class="input-group mb-2 option-row">
+                                    <input type="text" class="form-control" name="options[]" value="${option || ''}" required>
+                                    ${index > 0 ? `<button type="button" class="btn btn-outline-danger remove-option"><i class="bi bi-trash"></i></button>` : ''}
+                                </div>
+                                `).join('') || `
+                                <div class="input-group mb-2 option-row">
+                                    <input type="text" class="form-control" name="options[]" value="" required>
+                                </div>
+                                `}
+                            </div>
+                            <button type="button" id="addOption" class="btn btn-sm btn-outline-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Añadir opción
+                            </button>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Promociones</label>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label for="promotionsTitle" class="form-label">Título de promociones</label>
+                                        <input type="text" class="form-control" id="promotionsTitle" name="promotionsTitle" value="${config.content?.[section]?.promotions?.title || 'PROMOCIONES ACTIVAS:'}">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label">Items de promoción</label>
+                                        <div id="promotionsList">
+                                            ${(config.content?.[section]?.promotions?.items || []).map((item, index) => `
+                                            <div class="input-group mb-2 promotion-row">
+                                                <input type="text" class="form-control" name="promotions[]" value="${item || ''}" required>
+                                                ${index > 0 ? `<button type="button" class="btn btn-outline-danger remove-promotion"><i class="bi bi-trash"></i></button>` : ''}
+                                            </div>
+                                            `).join('') || `
+                                            <div class="input-group mb-2 promotion-row">
+                                                <input type="text" class="form-control" name="promotions[]" value="" required>
+                                            </div>
+                                            `}
+                                        </div>
+                                        <button type="button" id="addPromotion" class="btn btn-sm btn-outline-primary mt-2">
+                                            <i class="bi bi-plus-circle"></i> Añadir promoción
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        ` : ''}
+
+                        ${section === 'contacto' ? `
+                        <div class="mb-3">
+                            <label class="form-label">Métodos de Contacto</label>
+                            <div id="contactMethodsList">
+                                ${(config.content?.[section]?.methods || []).map((item, index) => `
+                                <div class="input-group mb-2 contact-row">
+                                    <input type="text" class="form-control contact-type" placeholder="Tipo (ej: Teléfono)" value="${item.type || ''}" required>
+                                    <input type="text" class="form-control contact-value" placeholder="Valor" value="${item.value || ''}" required>
+                                    ${index > 0 ? `<button type="button" class="btn btn-outline-danger remove-contact"><i class="bi bi-trash"></i></button>` : ''}
+                                </div>
+                                `).join('') || `
+                                <div class="input-group mb-2 contact-row">
+                                    <input type="text" class="form-control contact-type" placeholder="Tipo (ej: Teléfono)" value="" required>
+                                    <input type="text" class="form-control contact-value" placeholder="Valor" value="" required>
+                                </div>
+                                `}
+                            </div>
+                            <button type="button" id="addContact" class="btn btn-sm btn-outline-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Añadir método de contacto
+                            </button>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Redes Sociales</label>
+                            <div class="card mb-3">
+                                <div class="card-body">
+                                    <div class="mb-2">
+                                        <label for="socialTitle" class="form-label">Título</label>
+                                        <input type="text" class="form-control" id="socialTitle" name="socialTitle" value="${config.content?.[section]?.socialMedia?.title || 'Redes sociales:'}">
+                                    </div>
+                                    <div class="mb-2">
+                                        <label class="form-label">Redes</label>
+                                        <div id="networksList">
+                                            ${(config.content?.[section]?.socialMedia?.networks || []).map((item, index) => `
+                                            <div class="input-group mb-2 network-row">
+                                                <input type="text" class="form-control network-name" placeholder="Red (ej: Instagram)" value="${item.name || ''}" required>
+                                                <input type="text" class="form-control network-handle" placeholder="Usuario" value="${item.handle || ''}" required>
+                                                ${index > 0 ? `<button type="button" class="btn btn-outline-danger remove-network"><i class="bi bi-trash"></i></button>` : ''}
+                                            </div>
+                                            `).join('') || `
+                                            <div class="input-group mb-2 network-row">
+                                                <input type="text" class="form-control network-name" placeholder="Red (ej: Instagram)" value="" required>
+                                                <input type="text" class="form-control network-handle" placeholder="Usuario" value="" required>
+                                            </div>
+                                            `}
+                                        </div>
+                                        <button type="button" id="addNetwork" class="btn btn-sm btn-outline-primary mt-2">
+                                            <i class="bi bi-plus-circle"></i> Añadir red social
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Mensaje</label>
+                            <textarea class="form-control" id="message" name="message" rows="2">${config.content?.[section]?.message || ''}</textarea>
+                        </div>
+                        ` : ''}
+
+                        ${(section === 'catalogo' || section === 'listaPrecios') ? `
+                        <div class="mb-3">
+                            <label class="form-label">Pie de página (Footer)</label>
+                            <div id="footerList">
+                                ${(config.content?.[section]?.footer || []).map((item, index) => `
+                                <div class="input-group mb-2 footer-row">
+                                    <input type="text" class="form-control" name="footer[]" value="${item || ''}" required>
+                                    ${index > 0 ? `<button type="button" class="btn btn-outline-danger remove-footer"><i class="bi bi-trash"></i></button>` : ''}
+                                </div>
+                                `).join('') || `
+                                <div class="input-group mb-2 footer-row">
+                                    <input type="text" class="form-control" name="footer[]" value="" required>
+                                </div>
+                                `}
+                            </div>
+                            <button type="button" id="addFooter" class="btn btn-sm btn-outline-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Añadir línea
+                            </button>
+                        </div>
+                        ` : `
+                        <div class="mb-3">
+                            <label for="footer" class="form-label">Pie de página (Footer)</label>
+                            <textarea class="form-control" id="footer" name="footer" rows="2">${config.content?.[section]?.footer || ''}</textarea>
+                        </div>
+                        `}
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Vista Previa</h6>
+                </div>
+                <div class="card-body">
+                    <div class="preview-box p-3 border rounded bg-light" style="font-family: monospace; white-space: pre-wrap;">
+                        <div id="contentPreview">
+                            <p class="text-center" style="color: #b3e6c7;">La vista previa se generará al editar el contenido...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Ayuda</h6>
+                </div>
+                <div class="card-body">
+                    <p>Estás editando la sección: <strong>${section.charAt(0).toUpperCase() + section.slice(1)}</strong></p>
+                    <p>Consejos para editar el contenido:</p>
+                    <ul>
+                        <li>Puedes usar <code>*texto*</code> para hacer texto en <strong>negrita</strong></li>
+                        <li>Usa emojis para hacer el contenido más atractivo</li>
+                        <li>Mantén los textos concisos y fáciles de leer</li>
+                    </ul>
+                    <p>Los cambios se guardarán automáticamente en el archivo de configuración.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+    `,
+    extraScripts: `
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Manejar el envío del formulario
+            const form = document.getElementById('contentForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                // Obtener los datos según la sección
+                const formData = getFormData();
+                
+                fetch('/admin/api/config/${section}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Contenido guardado correctamente');
+                    } else {
+                        showAlert('danger', 'Error al guardar: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('danger', 'Error al comunicarse con el servidor');
+                });
+            });
+            
+            // Funciones para agregar elementos según la sección
+            setupSectionHandlers();
+            
+            // Actualizar vista previa en tiempo real
+            setupPreviewHandlers();
+            
+            // Actualizar vista previa inicial
+            updatePreview();
+            
+            // Función para obtener los datos del formulario según la sección
+            function getFormData() {
+                const formData = {
+                    title: document.getElementById('title').value
+                };
+                
+                switch ('${section}') {
+                    case 'horario':
+                    case 'envio':
+                        formData.sections = Array.from(document.querySelectorAll('.section-item')).map(item => {
+                            return {
+                                title: item.querySelector('.section-title').value,
+                                content: item.querySelector('.section-content').value
+                            };
+                        });
+                        formData.footer = document.getElementById('footer').value;
+                        break;
+                        
+                    case 'pago':
+                        formData.methods = Array.from(document.querySelectorAll('.method-item')).map(item => {
+                            const name = item.querySelector('.method-name').value;
+                            
+                            // Verificar si es un array de detalles o un solo texto
+                            const detailsList = item.querySelector('.method-details-list');
+                            let details;
+                            
+                            if (detailsList) {
+                                details = Array.from(detailsList.querySelectorAll('.detail-item')).map(input => input.value);
+                            } else {
+                                details = item.querySelector('.method-details').value;
+                            }
+                            
+                            return { name, details };
+                        });
+                        formData.footer = document.getElementById('footer').value;
+                        break;
+                        
+                    case 'direcciones':
+                        formData.locations = Array.from(document.querySelectorAll('.location-item')).map(item => {
+                            return {
+                                name: item.querySelector('.location-name').value,
+                                details: Array.from(item.querySelectorAll('.detail-item')).map(input => input.value)
+                            };
+                        });
+                        formData.reminder = document.getElementById('reminder').value;
+                        formData.footer = document.getElementById('footer').value;
+                        break;
+                        
+                    case 'precios':
+                        formData.message = document.getElementById('message').value;
+                        formData.options = Array.from(document.querySelectorAll('input[name="options[]"]')).map(input => input.value);
+                        formData.promotions = {
+                            title: document.getElementById('promotionsTitle').value,
+                            items: Array.from(document.querySelectorAll('input[name="promotions[]"]')).map(input => input.value)
+                        };
+                        formData.footer = document.getElementById('footer').value;
+                        break;
+                        
+                    case 'contacto':
+                        formData.methods = Array.from(document.querySelectorAll('.contact-row')).map(row => {
+                            return {
+                                type: row.querySelector('.contact-type').value,
+                                value: row.querySelector('.contact-value').value
+                            };
+                        });
+                        
+                        formData.socialMedia = {
+                            title: document.getElementById('socialTitle').value,
+                            networks: Array.from(document.querySelectorAll('.network-row')).map(row => {
+                                return {
+                                    name: row.querySelector('.network-name').value,
+                                    handle: row.querySelector('.network-handle').value
+                                };
+                            })
+                        };
+                        
+                        formData.message = document.getElementById('message').value;
+                        formData.footer = document.getElementById('footer').value;
+                        break;
+                        
+                    case 'catalogo':
+                    case 'listaPrecios':
+                        formData.footer = Array.from(document.querySelectorAll('input[name="footer[]"]')).map(input => input.value);
+                        break;
+                        
+                    default:
+                        // Para otras secciones que no tengan campos especiales
+                        formData.footer = document.getElementById('footer').value;
+                }
+                
+                return formData;
+            }
+            
+            // Función para configurar los manejadores de eventos según la sección
+            function setupSectionHandlers() {
+                switch ('${section}') {
+                    case 'horario':
+                    case 'envio':
+                        setupSectionsHandlers();
+                        break;
+                        
+                    case 'pago':
+                        setupPaymentMethodsHandlers();
+                        break;
+                        
+                    case 'direcciones':
+                        setupLocationsHandlers();
+                        break;
+                        
+                    case 'precios':
+                        setupPricesHandlers();
+                        break;
+                        
+                    case 'contacto':
+                        setupContactHandlers();
+                        break;
+                        
+                    case 'catalogo':
+                    case 'listaPrecios':
+                        setupFooterItemsHandlers();
+                        break;
+                }
+            }
+            
+            // Función para configurar los manejadores de vista previa según la sección
+            function setupPreviewHandlers() {
+                // Para todas las secciones, el título actualiza la vista previa
+                const titleInput = document.getElementById('title');
+                if (titleInput) {
+                    titleInput.addEventListener('input', updatePreview);
+                }
+                
+                // Para algunos tipos específicos
+                switch ('${section}') {
+                    case 'horario':
+                    case 'envio':
+                        document.getElementById('sectionsList').addEventListener('input', updatePreview);
+                        document.getElementById('footer').addEventListener('input', updatePreview);
+                        break;
+                        
+                    case 'pago':
+                        document.addEventListener('input', function(e) {
+                            if (e.target.closest('#methodsList') || e.target.id === 'footer') {
+                                updatePreview();
+                            }
+                        });
+                        break;
+                        
+                    case 'direcciones':
+                        document.addEventListener('input', function(e) {
+                            if (e.target.closest('#locationsList') || e.target.id === 'reminder' || e.target.id === 'footer') {
+                                updatePreview();
+                            }
+                        });
+                        break;
+                        
+                    case 'precios':
+                        document.addEventListener('input', function(e) {
+                            if (e.target.id === 'message' || e.target.name === 'options[]' || 
+                                e.target.id === 'promotionsTitle' || e.target.name === 'promotions[]' || 
+                                e.target.id === 'footer') {
+                                updatePreview();
+                            }
+                        });
+                        break;
+                        
+                    case 'contacto':
+                        document.addEventListener('input', function(e) {
+                            if (e.target.closest('#contactMethodsList') || e.target.closest('#networksList') || 
+                                e.target.id === 'message' || e.target.id === 'footer' || 
+                                e.target.id === 'socialTitle') {
+                                updatePreview();
+                            }
+                        });
+                        break;
+                        
+                    case 'catalogo':
+                    case 'listaPrecios':
+                        document.getElementById('footerList').addEventListener('input', updatePreview);
+                        break;
+                        
+                    default:
+                        const footerInput = document.getElementById('footer');
+                        if (footerInput) {
+                            footerInput.addEventListener('input', updatePreview);
+                        }
+                }
+            }
+            
+            // Funciones específicas para manejar los diferentes tipos de secciones
+            function setupSectionsHandlers() {
+                // Agregar sección
+                const addSectionBtn = document.getElementById('addSection');
+                if (addSectionBtn) {
+                    addSectionBtn.addEventListener('click', function() {
+                        const sectionsList = document.getElementById('sectionsList');
+                        const newSection = document.createElement('div');
+                        newSection.className = 'card mb-3 section-item';
+                        newSection.innerHTML = 
+                            '<div class="card-body">' +
+                            '    <div class="mb-2">' +
+                            '        <label class="form-label">Título de sección</label>' +
+                            '        <input type="text" class="form-control section-title" value="" required>' +
+                            '    </div>' +
+                            '    <div class="mb-2">' +
+                            '        <label class="form-label">Contenido</label>' +
+                            '        <textarea class="form-control section-content" rows="2" required></textarea>' +
+                            '    </div>' +
+                            '    <button type="button" class="btn btn-sm btn-outline-danger remove-section mt-2"><i class="bi bi-trash"></i> Eliminar sección</button>' +
+                            '</div>';
+                        sectionsList.appendChild(newSection);
+                        updatePreview();
+                    });
+                }
+                
+                // Eliminar sección (delegación de eventos)
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-section') || e.target.parentElement.classList.contains('remove-section')) {
+                        const button = e.target.classList.contains('remove-section') ? e.target : e.target.parentElement;
+                        const section = button.closest('.section-item');
+                        section.remove();
+                        updatePreview();
+                    }
+                });
+            }
+            
+            function setupPaymentMethodsHandlers() {
+                // Agregar método de pago
+                const addMethodBtn = document.getElementById('addMethod');
+                if (addMethodBtn) {
+                    addMethodBtn.addEventListener('click', function() {
+                        const methodsList = document.getElementById('methodsList');
+                        const newMethod = document.createElement('div');
+                        newMethod.className = 'card mb-3 method-item';
+                        newMethod.innerHTML = 
+                            '<div class="card-body">' +
+                            '    <div class="mb-2">' +
+                            '        <label class="form-label">Nombre del método</label>' +
+                            '        <input type="text" class="form-control method-name" value="" required>' +
+                            '    </div>' +
+                            '    <div class="mb-2">' +
+                            '        <label class="form-label">Detalles</label>' +
+                            '        <textarea class="form-control method-details" rows="2" required></textarea>' +
+                            '    </div>' +
+                            '    <button type="button" class="btn btn-sm btn-outline-danger remove-method mt-2"><i class="bi bi-trash"></i> Eliminar método</button>' +
+                            '</div>';
+                        methodsList.appendChild(newMethod);
+                        updatePreview();
+                    });
+                }
+                
+                // Eliminar método (delegación de eventos)
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-method') || e.target.parentElement.classList.contains('remove-method')) {
+                        const button = e.target.classList.contains('remove-method') ? e.target : e.target.parentElement;
+                        const method = button.closest('.method-item');
+                        method.remove();
+                        updatePreview();
+                    }
+                });
+                
+                // Agregar detalle a un método (delegación de eventos)
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('add-detail') || e.target.parentElement.classList.contains('add-detail')) {
+                        const button = e.target.classList.contains('add-detail') ? e.target : e.target.parentElement;
+                        const detailsList = button.closest('.method-details-list');
+                        const newDetail = document.createElement('div');
+                        newDetail.className = 'input-group mb-2 detail-row';
+                        newDetail.innerHTML = 
+                            '<input type="text" class="form-control detail-item" value="" required>' +
+                            '<button type="button" class="btn btn-outline-danger remove-detail"><i class="bi bi-trash"></i></button>';
+                        detailsList.insertBefore(newDetail, button);
+                        updatePreview();
+                    }
+                });
+                
+                // Eliminar detalle (delegación de eventos)
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-detail') || e.target.parentElement.classList.contains('remove-detail')) {
+                        const button = e.target.classList.contains('remove-detail') ? e.target : e.target.parentElement;
+                        const detail = button.closest('.detail-row');
+                        detail.remove();
+                        updatePreview();
+                    }
+                });
+            }
+            
+            function setupLocationsHandlers() {
+                // Agregar ubicación
+                const addLocationBtn = document.getElementById('addLocation');
+                if (addLocationBtn) {
+                    addLocationBtn.addEventListener('click', function() {
+                        const locationsList = document.getElementById('locationsList');
+                        const newLocation = document.createElement('div');
+                        newLocation.className = 'card mb-3 location-item';
+                        newLocation.innerHTML = 
+                            '<div class="card-body">' +
+                            '    <div class="mb-2">' +
+                            '        <label class="form-label">Nombre de la ubicación</label>' +
+                            '        <input type="text" class="form-control location-name" value="" required>' +
+                            '    </div>' +
+                            '    <div class="mb-2">' +
+                            '        <label class="form-label">Detalles</label>' +
+                            '        <div class="location-details-list">' +
+                            '            <div class="input-group mb-2 detail-row">' +
+                            '                <input type="text" class="form-control detail-item" value="" required>' +
+                            '            </div>' +
+                            '            <button type="button" class="btn btn-sm btn-outline-secondary add-detail mt-2">' +
+                            '                <i class="bi bi-plus-circle"></i> Añadir detalle' +
+                            '            </button>' +
+                            '        </div>' +
+                            '    </div>' +
+                            '    <button type="button" class="btn btn-sm btn-outline-danger remove-location mt-2"><i class="bi bi-trash"></i> Eliminar ubicación</button>' +
+                            '</div>';
+                        locationsList.appendChild(newLocation);
+                        updatePreview();
+                    });
+                }
+                
+                // Eliminar ubicación (delegación de eventos)
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-location') || e.target.parentElement.classList.contains('remove-location')) {
+                        const button = e.target.classList.contains('remove-location') ? e.target : e.target.parentElement;
+                        const location = button.closest('.location-item');
+                        location.remove();
+                        updatePreview();
+                    }
+                });
+                
+                // Manejar agregar/eliminar detalles (reutilizando las funciones de método de pago)
+            }
+            
+            function setupPricesHandlers() {
+                // Agregar opción
+                const addOptionBtn = document.getElementById('addOption');
+                if (addOptionBtn) {
+                    addOptionBtn.addEventListener('click', function() {
+                        const optionsList = document.getElementById('optionsList');
+                        const newOption = document.createElement('div');
+                        newOption.className = 'input-group mb-2 option-row';
+                        newOption.innerHTML = 
+                            '<input type="text" class="form-control" name="options[]" value="" required>' +
+                            '<button type="button" class="btn btn-outline-danger remove-option"><i class="bi bi-trash"></i></button>';
+                        optionsList.appendChild(newOption);
+                        updatePreview();
+                    });
+                }
+                
+                // Eliminar opción (delegación de eventos)
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-option') || e.target.parentElement.classList.contains('remove-option')) {
+                        const button = e.target.classList.contains('remove-option') ? e.target : e.target.parentElement;
+                        const option = button.closest('.option-row');
+                        option.remove();
+                        updatePreview();
+                    }
+                });
+                
+                // Agregar promoción
+                const addPromotionBtn = document.getElementById('addPromotion');
+                if (addPromotionBtn) {
+                    addPromotionBtn.addEventListener('click', function() {
+                        const promotionsList = document.getElementById('promotionsList');
+                        const newPromotion = document.createElement('div');
+                        newPromotion.className = 'input-group mb-2 promotion-row';
+                        newPromotion.innerHTML = 
+                            '<input type="text" class="form-control" name="promotions[]" value="" required>' +
+                            '<button type="button" class="btn btn-outline-danger remove-promotion"><i class="bi bi-trash"></i></button>';
+                        promotionsList.appendChild(newPromotion);
+                        updatePreview();
+                    });
+                }
+                
+                // Eliminar promoción (delegación de eventos)
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-promotion') || e.target.parentElement.classList.contains('remove-promotion')) {
+                        const button = e.target.classList.contains('remove-promotion') ? e.target : e.target.parentElement;
+                        const promotion = button.closest('.promotion-row');
+                        promotion.remove();
+                        updatePreview();
+                    }
+                });
+            }
+            
+            function setupContactHandlers() {
+                // Agregar método de contacto
+                const addContactBtn = document.getElementById('addContact');
+                if (addContactBtn) {
+                    addContactBtn.addEventListener('click', function() {
+                        const contactMethodsList = document.getElementById('contactMethodsList');
+                        const newContact = document.createElement('div');
+                        newContact.className = 'input-group mb-2 contact-row';
+                        newContact.innerHTML = 
+                            '<input type="text" class="form-control contact-type" placeholder="Tipo (ej: Teléfono)" value="" required>' +
+                            '<input type="text" class="form-control contact-value" placeholder="Valor" value="" required>' +
+                            '<button type="button" class="btn btn-outline-danger remove-contact"><i class="bi bi-trash"></i></button>';
+                        contactMethodsList.appendChild(newContact);
+                        updatePreview();
+                    });
+                }
+                
+                // Eliminar método de contacto (delegación de eventos)
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-contact') || e.target.parentElement.classList.contains('remove-contact')) {
+                        const button = e.target.classList.contains('remove-contact') ? e.target : e.target.parentElement;
+                        const contact = button.closest('.contact-row');
+                        contact.remove();
+                        updatePreview();
+                    }
+                });
+                
+                // Agregar red social
+                const addNetworkBtn = document.getElementById('addNetwork');
+                if (addNetworkBtn) {
+                    addNetworkBtn.addEventListener('click', function() {
+                        const networksList = document.getElementById('networksList');
+                        const newNetwork = document.createElement('div');
+                        newNetwork.className = 'input-group mb-2 network-row';
+                        newNetwork.innerHTML = 
+                            '<input type="text" class="form-control network-name" placeholder="Red (ej: Instagram)" value="" required>' +
+                            '<input type="text" class="form-control network-handle" placeholder="Usuario" value="" required>' +
+                            '<button type="button" class="btn btn-outline-danger remove-network"><i class="bi bi-trash"></i></button>';
+                        networksList.appendChild(newNetwork);
+                        updatePreview();
+                    });
+                }
+                
+                // Eliminar red social (delegación de eventos)
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-network') || e.target.parentElement.classList.contains('remove-network')) {
+                        const button = e.target.classList.contains('remove-network') ? e.target : e.target.parentElement;
+                        const network = button.closest('.network-row');
+                        network.remove();
+                        updatePreview();
+                    }
+                });
+            }
+            
+            function setupFooterItemsHandlers() {
+                // Agregar línea de footer
+                const addFooterBtn = document.getElementById('addFooter');
+                if (addFooterBtn) {
+                    addFooterBtn.addEventListener('click', function() {
+                        const footerList = document.getElementById('footerList');
+                        const newFooter = document.createElement('div');
+                        newFooter.className = 'input-group mb-2 footer-row';
+                        newFooter.innerHTML = 
+                            '<input type="text" class="form-control" name="footer[]" value="" required>' +
+                            '<button type="button" class="btn btn-outline-danger remove-footer"><i class="bi bi-trash"></i></button>';
+                        footerList.appendChild(newFooter);
+                        updatePreview();
+                    });
+                }
+                
+                // Eliminar línea de footer (delegación de eventos)
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-footer') || e.target.parentElement.classList.contains('remove-footer')) {
+                        const button = e.target.classList.contains('remove-footer') ? e.target : e.target.parentElement;
+                        const footer = button.closest('.footer-row');
+                        footer.remove();
+                        updatePreview();
+                    }
+                });
+            }
+            
+            function updatePreview() {
+                const previewDiv = document.getElementById('contentPreview');
+                const title = document.getElementById('title').value || 'TÍTULO';
+                
+                let previewContent = '';
+                
+                switch ('${section}') {
+                    case 'horario':
+                        previewContent = generateHorarioPreview(title);
+                        break;
+                    case 'envio':
+                        previewContent = generateEnvioPreview(title);
+                        break;
+                    case 'pago':
+                        previewContent = generatePagoPreview(title);
+                        break;
+                    case 'direcciones':
+                        previewContent = generateDireccionesPreview(title);
+                        break;
+                    case 'precios':
+                        previewContent = generatePreciosPreview(title);
+                        break;
+                    case 'contacto':
+                        previewContent = generateContactoPreview(title);
+                        break;
+                    case 'catalogo':
+                    case 'listaPrecios':
+                        previewContent = generateListaPreview(title);
+                        break;
+                    default:
+                        previewContent = generateGenericPreview(title);
+                }
+                
+                previewDiv.innerHTML = '<pre>' + previewContent + '</pre>';
+            }
+            
+            function generateHorarioPreview(title) {
+                let preview = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                preview += '⏰ *' + title + '* ⏰\\n';
+                preview += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                
+                const sections = document.querySelectorAll('.section-item');
+                sections.forEach(section => {
+                    const sectionTitle = section.querySelector('.section-title').value;
+                    const sectionContent = section.querySelector('.section-content').value;
+                    
+                    preview += '*' + sectionTitle + '*\\n';
+                    preview += sectionContent + '\\n\\n';
+                });
+                
+                const footer = document.getElementById('footer').value;
+                if (footer) {
+                    preview += '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                    preview += footer;
+                }
+                
+                return preview;
+            }
+            
+            function generateEnvioPreview(title) {
+                let preview = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                preview += '🚚 *' + title + '* 📦\\n';
+                preview += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                
+                const sections = document.querySelectorAll('.section-item');
+                sections.forEach(section => {
+                    const sectionTitle = section.querySelector('.section-title').value;
+                    const sectionContent = section.querySelector('.section-content').value;
+                    
+                    preview += '*' + sectionTitle + '* ' + sectionContent + '\\n';
+                });
+                preview += '\\n';
+                
+                const footer = document.getElementById('footer').value;
+                if (footer) {
+                    preview += '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                    preview += footer;
+                }
+                
+                return preview;
+            }
+            
+            function generatePagoPreview(title) {
+                let preview = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                preview += '💳 *' + title + '* 💸\\n';
+                preview += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                
+                const methods = document.querySelectorAll('.method-item');
+                methods.forEach(method => {
+                    const methodName = method.querySelector('.method-name').value;
+                    preview += '*' + methodName + '*\\n';
+                    
+                    // Verificar si es un array de detalles o un solo texto
+                    const detailsList = method.querySelector('.method-details-list');
+                    if (detailsList) {
+                        const details = Array.from(detailsList.querySelectorAll('.detail-item')).map(input => input.value);
+                        preview += details.join('\\n') + '\\n';
+                    } else {
+                        const details = method.querySelector('.method-details').value;
+                        preview += details + '\\n';
+                    }
+                    
+                    preview += '\\n';
+                });
+                
+                const footer = document.getElementById('footer').value;
+                if (footer) {
+                    preview += '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                    preview += footer;
+                }
+                
+                return preview;
+            }
+            
+            function generateDireccionesPreview(title) {
+                let preview = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                preview += '📍 *' + title + '* 📍\\n';
+                preview += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                
+                const locations = document.querySelectorAll('.location-item');
+                locations.forEach(location => {
+                    const locationName = location.querySelector('.location-name').value;
+                    preview += '*' + locationName + '*\\n';
+                    
+                    const details = Array.from(location.querySelectorAll('.detail-item')).map(input => input.value);
+                    preview += details.join('\\n') + '\\n\\n';
+                });
+                
+                const reminder = document.getElementById('reminder').value;
+                if (reminder) {
+                    preview += reminder + '\\n\\n';
+                }
+                
+                const footer = document.getElementById('footer').value;
+                if (footer) {
+                    preview += '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                    preview += footer;
+                }
+                
+                return preview;
+            }
+            
+            function generatePreciosPreview(title) {
+                let preview = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                preview += '💲 *' + title + '* 💲\\n';
+                preview += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                
+                const message = document.getElementById('message').value;
+                if (message) {
+                    preview += message + '\\n\\n';
+                }
+                
+                const options = Array.from(document.querySelectorAll('input[name="options[]"]')).map(input => input.value);
+                if (options.length > 0) {
+                    preview += options.join('\\n') + '\\n\\n';
+                }
+                
+                const promotionsTitle = document.getElementById('promotionsTitle').value;
+                const promotions = Array.from(document.querySelectorAll('input[name="promotions[]"]')).map(input => input.value);
+                if (promotions.length > 0) {
+                    preview += '*' + promotionsTitle + '*\\n';
+                    preview += promotions.join('\\n') + '\\n\\n';
+                }
+                
+                const footer = document.getElementById('footer').value;
+                if (footer) {
+                    preview += '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                    preview += footer;
+                }
+                
+                return preview;
+            }
+            
+            function generateContactoPreview(title) {
+                let preview = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                preview += '📱 *' + title + '* 📞\\n';
+                preview += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                
+                const methods = Array.from(document.querySelectorAll('.contact-row')).map(row => {
+                    const type = row.querySelector('.contact-type').value;
+                    const value = row.querySelector('.contact-value').value;
+                    return '*' + type + ':* ' + value;
+                });
+                
+                if (methods.length > 0) {
+                    preview += methods.join('\\n') + '\\n\\n';
+                }
+                
+                const socialTitle = document.getElementById('socialTitle')?.value;
+                if (socialTitle) {
+                    preview += '*' + socialTitle + '*\\n';
+                    
+                    const networks = Array.from(document.querySelectorAll('.network-row')).map(row => {
+                        const name = row.querySelector('.network-name').value;
+                        const handle = row.querySelector('.network-handle').value;
+                        return '• *' + name + ':* ' + handle;
+                    });
+                    
+                    if (networks.length > 0) {
+                        preview += networks.join('\\n') + '\\n\\n';
+                    }
+                }
+                
+                const message = document.getElementById('message').value;
+                if (message) {
+                    preview += message + '\\n\\n';
+                }
+                
+                const footer = document.getElementById('footer').value;
+                if (footer) {
+                    preview += '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                    preview += footer;
+                }
+                
+                return preview;
+            }
+            
+            function generateListaPreview(title) {
+                let preview = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                preview += '📋 *' + title + '*\\n';
+                preview += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                
+                preview += '[Contenido del catálogo/lista de precios]\\n\\n';
+                
+                const footerItems = Array.from(document.querySelectorAll('input[name="footer[]"]')).map(input => input.value);
+                if (footerItems.length > 0) {
+                    preview += '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                    preview += footerItems.join('\\n');
+                }
+                
+                return preview;
+            }
+            
+            function generateGenericPreview(title) {
+                let preview = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                preview += '🔔 *' + title + '*\\n';
+                preview += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                
+                preview += '[Contenido de la sección]\\n\\n';
+                
+                const footer = document.getElementById('footer')?.value;
+                if (footer) {
+                    preview += '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                    preview += footer;
+                }
+                
+                return preview;
+            }
+        });
+
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
+            alertDiv.innerHTML = 
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            alertContainer.appendChild(alertDiv);
+
+            // Auto-cerrar después de 5 segundos
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    alertContainer.removeChild(alertDiv);
+                }, 150);
+            }, 5000);
+        }
+    </script>
+    `
+}) %>

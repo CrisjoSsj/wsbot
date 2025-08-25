@@ -1,0 +1,490 @@
+<%- include('layout', {
+    pageTitle: 'Editar Menú',
+    activeTab: 'menu',
+    username: username,
+    showMessages: true,
+    body: `
+            <style>
+                body, .container, .row, .card, .card-header, .card-body, .breadcrumb, .preview-box {
+                    background: var(--bg-primary, #181c24) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                }
+                .card, .feature-card, .stat-card, .shadow {
+                    background: var(--card-bg, #232836) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                    border: none !important;
+                    box-shadow: 0 0.15rem 1.75rem 0 #10131a99 !important;
+                }
+                .card-header, .feature-card .card-header, .stat-card .card-header {
+                    background: var(--bg-secondary, #232836) !important;
+                    color: var(--accent-color, #25D366) !important;
+                    border-bottom: 1px solid var(--border-color, #333) !important;
+                }
+                .breadcrumb {
+                    background: transparent !important;
+                    color: var(--text-secondary, #b0b0b0) !important;
+                }
+                .form-control, .input-group-text {
+                    background: #232836 !important;
+                    color: #f1f1f1 !important;
+                    border: 1px solid var(--border-color, #333) !important;
+                }
+                .form-control:focus {
+                    background: #232836 !important;
+                    color: #fff !important;
+                    border-color: var(--accent-color, #25D366) !important;
+                    box-shadow: 0 0 0 0.2rem #25d36633;
+                }
+                .btn-primary, .btn-outline-primary, .btn-success, .btn-outline-success {
+                    background: var(--accent-color, #25D366) !important;
+                    border: none !important;
+                    color: #181c24 !important;
+                    font-weight: bold;
+                }
+                .btn-primary:hover, .btn-outline-primary:hover, .btn-success:hover, .btn-outline-success:hover {
+                    background: var(--highlight-color, #128C7E) !important;
+                    color: #fff !important;
+                }
+                .btn-outline-secondary, .btn-outline-secondary:hover {
+                    background: transparent !important;
+                    color: var(--accent-color, #25D366) !important;
+                    border: 1px solid var(--accent-color, #25D366) !important;
+                }
+                .alert-info {
+                    background: #1a232d !important;
+                    color: #b3e6c7 !important;
+                    border: 1px solid #25D366 !important;
+                }
+                .alert-success {
+                    background: #1d2b1d !important;
+                    color: #b3e6c7 !important;
+                    border: 1px solid #25D366 !important;
+                }
+                .alert-danger {
+                    background: #2d1a1a !important;
+                    color: #ffb3b3 !important;
+                    border: 1px solid #ff3b3b !important;
+                }
+                .text-primary, .text-info, .text-gray-800, .font-weight-bold, .h3, .h4, .h5, .h6 {
+                    color: var(--accent-color, #25D366) !important;
+                }
+                .border-left-primary, .border-left-info, .border-left-warning {
+                    border-left: 4px solid var(--accent-color, #25D366) !important;
+                }
+                .bg-primary, .bg-info, .bg-light, .bg-white {
+                    background: var(--card-bg, #232836) !important;
+                    color: var(--text-primary, #f1f1f1) !important;
+                }
+                .text-muted {
+                    color: var(--text-secondary, #b0b0b0) !important;
+                }
+                .stat-number, .status-indicator.online {
+                    color: var(--accent-color, #25D366) !important;
+                }
+                .feature-card:hover {
+                    box-shadow: 0 0.5rem 1.75rem 0 #25d36633 !important;
+                    border: 1px solid var(--accent-color, #25D366) !important;
+                }
+            </style>
+        <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Editar Menú</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0 text-gray-800">Editar Menú</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Personalizar Menú Principal</h6>
+                </div>
+                <div class="card-body">
+                    <form id="menuForm">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título del Menú</label>
+                            <input type="text" class="form-control" id="title" name="title" value="${config.menu?.title || 'MENÚ'}" required>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="greeting" class="form-label">Saludo Inicial</label>
+                            <input type="text" class="form-control" id="greeting" name="greeting" value="${config.menu?.greeting || '¡Hola! Bienvenido a nuestro menú. ¿En qué podemos ayudarte hoy?'}">
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label class="form-label">Opciones del Menú</label>
+                            <div id="optionsList">
+                                ${(config.menu?.options || []).map((item, index) => {
+                                    // Ocultar las opciones 1 y 4 del editor web para que no sean editables
+                                    if (String(item.number) === '1' || String(item.number) === '4') return '';
+                                    return `
+                                <div class="card mb-3 option-item">
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <label class="form-label">Número de opción</label>
+                                            <input type="text" class="form-control option-number" value="${item.number || index + 1}" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Texto de la opción</label>
+                                            <input type="text" class="form-control option-text" value="${item.text || ''}" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Respuesta al seleccionar</label>
+                                            <textarea class="form-control option-response" rows="3" placeholder="Respuesta que el bot enviará cuando el usuario seleccione esta opción" required>${item.response || ''}</textarea>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Comando asociado (clave única)</label>
+                                            <input type="text" class="form-control option-key" value="${item.key || ''}" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Emoji (opcional)</label>
+                                            <input type="text" class="form-control option-emoji" value="${item.emoji || ''}" placeholder="Ej: 📘">
+                                        </div>
+                                        <button type="button" class="btn btn-sm btn-outline-danger remove-option mt-2"><i class="bi bi-trash"></i> Eliminar opción</button>
+                                    </div>
+                                </div>
+                                `;
+                                }).join('') || `
+                                <div class="card mb-3 option-item">
+                                    <div class="card-body">
+                                        <div class="mb-2">
+                                            <label class="form-label">Número de opción</label>
+                                            <input type="text" class="form-control option-number" value="1" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Texto de la opción</label>
+                                            <input type="text" class="form-control option-text" value="Información" required>
+                                        </div>
+                                        <div class="mb-2">
+                                            <label class="form-label">Comando asociado (clave única)</label>
+                                            <input type="text" class="form-control option-key" value="info" required>
+                                        </div>
+                                        <div class="mb-3">
+                                            <label class="form-label">Emoji (opcional)</label>
+                                            <input type="text" class="form-control option-emoji" value="ℹ️" placeholder="Ej: 📘">
+                                        </div>
+                                    </div>
+                                </div>
+                                `}
+                            </div>
+                            <button type="button" id="addOption" class="btn btn-sm btn-outline-primary">
+                                <i class="bi bi-plus-circle"></i> Añadir opción
+                            </button>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="footer" class="form-label">Pie de página (Footer)</label>
+                            <textarea class="form-control" id="footer" name="footer" rows="2">${config.menu?.footer || ''}</textarea>
+                        </div>
+                        
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+
+
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Vista Previa</h6>
+                </div>
+                <div class="card-body">
+                    <div class="preview-box p-3 border rounded bg-light" style="font-family: monospace; white-space: pre-wrap;">
+                        <div id="menuPreview">
+                            <p class="text-center" style="color: #b3e6c7;">La vista previa se generará al editar el contenido...</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Ayuda</h6>
+                </div>
+                <div class="card-body">
+                    <p><strong>Consejos para editar el menú:</strong></p>
+                    <ul>
+                        <li>Usa emojis para hacer el menú más atractivo y visual</li>
+                        <li>Mantén las opciones claras y concisas</li>
+                        <li>Asegúrate de que los comandos (claves) sean únicos</li>
+                        <li>El número de la opción puede ser un número o un emoji</li>
+                    </ul>
+                    <p><strong>Comandos importantes:</strong></p>
+                    <ul>
+                        <li><code>menu1</code>: Muestra el menú principal</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    `,
+    extraScripts: `
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Manejar el envío del formulario principal del menú
+            const menuForm = document.getElementById('menuForm');
+            menuForm.addEventListener('submit', function(e) {
+                e.preventDefault();
+                // Obtener datos del menú
+                const options = Array.from(document.querySelectorAll('.option-item')).map(item => {
+                    return {
+                        number: item.querySelector('.option-number').value,
+                        text: item.querySelector('.option-text').value,
+                        key: item.querySelector('.option-key').value,
+                        response: item.querySelector('.option-response') ? item.querySelector('.option-response').value : undefined,
+                        emoji: item.querySelector('.option-emoji').value || null
+                    };
+                });
+                // Validar números únicos y de un solo dígito
+                const numbers = options.map(op => op.number);
+                const uniqueNumbers = new Set(numbers);
+                const invalidNumbers = numbers.filter(n => !/^[1-9]$/.test(n));
+                if (uniqueNumbers.size !== numbers.length) {
+                    showAlert('danger', 'Los números de opción deben ser únicos.');
+                    return;
+                }
+                if (invalidNumbers.length > 0) {
+                    showAlert('danger', 'Los números de opción deben ser de un solo dígito (1-9).');
+                    return;
+                }
+                const menuData = {
+                    title: document.getElementById('title').value,
+                    greeting: document.getElementById('greeting').value,
+                    options,
+                    footer: document.getElementById('footer').value
+                };
+                fetch('/admin/api/config/menu', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(menuData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Configuración del menú guardada correctamente');
+                    } else {
+                        showAlert('danger', 'Error al guardar: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('danger', 'Error al comunicarse con el servidor');
+                });
+            });
+            
+
+            
+            // Funciones para agregar/eliminar opciones del menú
+            setupMenuOptionHandlers();
+            
+            // Actualizar vista previa en tiempo real
+            setupPreviewHandlers();
+            
+            // Actualizar vista previa inicial
+            updatePreview();
+            
+            // Función para configurar los manejadores de opciones del menú y validación UX
+            function setupMenuOptionHandlers() {
+                // Agregar opción
+                const addOptionBtn = document.getElementById('addOption');
+                addOptionBtn.addEventListener('click', function() {
+                    const optionsList = document.getElementById('optionsList');
+                    const options = document.querySelectorAll('.option-item');
+                    const newOptionNumber = options.length + 1;
+                    const newOption = document.createElement('div');
+                    newOption.className = 'card mb-3 option-item';
+                    newOption.innerHTML = 
+                        '<div class="card-body">' +
+                        '    <div class="mb-2">' +
+                        '        <label class="form-label">Número de opción</label>' +
+                        '        <input type="text" class="form-control option-number" value="' + newOptionNumber + '" required>' +
+                        '    </div>' +
+                        '    <div class="mb-2">' +
+                        '        <label class="form-label">Texto de la opción</label>' +
+                        '        <input type="text" class="form-control option-text" value="" required>' +
+                        '    </div>' +
+                        '    <div class="mb-2">' +
+                        '        <label class="form-label">Respuesta al seleccionar</label>' +
+                        '        <textarea class="form-control option-response" rows="3" placeholder="Respuesta que el bot enviará cuando el usuario seleccione esta opción" required></textarea>' +
+                        '    </div>' +
+                        '    <div class="mb-2">' +
+                        '        <label class="form-label">Comando asociado (clave única)</label>' +
+                        '        <input type="text" class="form-control option-key" value="" required>' +
+                        '    </div>' +
+                        '    <div class="mb-3">' +
+                        '        <label class="form-label">Emoji (opcional)</label>' +
+                        '        <input type="text" class="form-control option-emoji" value="" placeholder="Ej: 📘">' +
+                        '    </div>' +
+                        '    <button type="button" class="btn btn-sm btn-outline-danger remove-option mt-2"><i class="bi bi-trash"></i> Eliminar opción</button>' +
+                        '</div>';
+                    optionsList.appendChild(newOption);
+                    updatePreview();
+                    validateMenuOptions();
+                });
+
+                // Validación en tiempo real
+                document.getElementById('optionsList').addEventListener('input', validateMenuOptions);
+
+                // Eliminar opción (delegación de eventos) - proteger opción 1
+                document.addEventListener('click', function(e) {
+                    if (e.target.classList.contains('remove-option') || e.target.parentElement.classList.contains('remove-option')) {
+                        const button = e.target.classList.contains('remove-option') ? e.target : e.target.parentElement;
+                        const option = button.closest('.option-item');
+                        const numberField = option.querySelector('.option-number');
+                        if (numberField && numberField.value && String(numberField.value).trim() === '1') {
+                            showAlert('danger', 'La opción 1 es el menú principal y no se puede eliminar');
+                            return;
+                        }
+                        option.remove();
+                        updatePreview();
+                        validateMenuOptions();
+                    }
+                });
+            }
+
+            // Validación UX en tiempo real para opciones de menú
+            function validateMenuOptions() {
+                const optionInputs = Array.from(document.querySelectorAll('.option-number'));
+                const numbers = optionInputs.map(input => input.value);
+                const uniqueNumbers = new Set(numbers);
+                const invalidNumbers = numbers.filter(n => !/^[1-9]$/.test(n));
+                let hasError = false;
+                // Limpiar estilos previos
+                optionInputs.forEach(input => {
+                    input.classList.remove('is-invalid');
+                });
+                // Resaltar repetidos
+                numbers.forEach((num, idx) => {
+                    if (numbers.indexOf(num) !== idx || !/^[1-9]$/.test(num)) {
+                        optionInputs[idx].classList.add('is-invalid');
+                        hasError = true;
+                    }
+                });
+                // Mensaje persistente
+                const saveBtn = document.querySelector('button[type="submit"]');
+                if (hasError) {
+                    let msg = '';
+                    if (uniqueNumbers.size !== numbers.length) msg += 'Hay números de opción repetidos. ';
+                    if (invalidNumbers.length > 0) msg += 'Solo se permiten números de un dígito (1-9).';
+                    showAlert('danger', msg.trim());
+                    saveBtn.disabled = true;
+                } else {
+                    saveBtn.disabled = false;
+                }
+            }
+            
+            // Función para configurar los manejadores de vista previa
+            function setupPreviewHandlers() {
+                // Escuchar cambios en campos del menú
+                document.getElementById('title').addEventListener('input', updatePreview);
+                document.getElementById('greeting').addEventListener('input', updatePreview);
+                document.getElementById('footer').addEventListener('input', updatePreview);
+                
+                // Escuchar cambios en las opciones del menú
+                document.getElementById('optionsList').addEventListener('input', updatePreview);
+                
+
+            }
+            
+            // Función para actualizar la vista previa
+            function updatePreview() {
+                const previewDiv = document.getElementById('menuPreview');
+                
+                // Obtener valores actuales
+                const title = document.getElementById('title').value || 'MENÚ';
+                const greeting = document.getElementById('greeting').value || '';
+                let options = Array.from(document.querySelectorAll('.option-item')).map(item => {
+                    return {
+                        number: item.querySelector('.option-number').value,
+                        text: item.querySelector('.option-text').value,
+                        emoji: item.querySelector('.option-emoji').value || ''
+                    };
+                });
+                // Asegurar que la opción 1 y 4 siempre estén en la vista previa
+                const has1 = options.some(op => op.number === '1');
+                const has4 = options.some(op => op.number === '4');
+                if (!has1) {
+                    options = [
+                        { number: '1', text: 'Ver este menú', emoji: '' },
+                        ...options
+                    ];
+                }
+                if (!has4) {
+                    // Insertar la opción 4 después de la 3 si existe, si no al final
+                    let idx3 = options.findIndex(op => op.number === '3');
+                    if (idx3 !== -1) {
+                        options.splice(idx3 + 1, 0, { number: '4', text: 'Contactar asesor', emoji: '' });
+                    } else {
+                        options.push({ number: '4', text: 'Contactar asesor', emoji: '' });
+                    }
+                }
+                const footer = document.getElementById('footer').value || '';
+
+                
+                // Construir vista previa
+                let previewContent = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                previewContent += '🔹 *' + title + '* 🔹\\n';
+                previewContent += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                
+                if (greeting) {
+                    previewContent += greeting + '\\n\\n';
+                }
+                
+                options.forEach(option => {
+                    let optionText = option.number + '. ';
+                    if (option.emoji) {
+                        optionText += option.emoji + ' ';
+                    }
+                    optionText += option.text;
+                    previewContent += optionText + '\\n';
+                });
+                
+                if (options.length > 0) previewContent += '\\n';
+
+                
+                if (footer) {
+                    previewContent += '\\n━━━━━━━━━━━━━━━━━━━━━━\\n';
+                    previewContent += footer;
+                }
+                
+                previewDiv.innerHTML = '<pre>' + previewContent + '</pre>';
+            }
+        });
+
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show alert-important';
+            alertDiv.innerHTML = 
+                '<span style="font-weight:bold;">' + message + '</span>' +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            alertContainer.appendChild(alertDiv);
+
+            // Scroll automático al aviso
+            alertDiv.scrollIntoView({ behavior: 'smooth', block: 'center' });
+            alertDiv.style.boxShadow = '0 0 10px 2px #ff3b3b';
+
+            // Auto-cerrar después de 5 segundos
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    if (alertDiv.parentNode) alertDiv.parentNode.removeChild(alertDiv);
+                }, 150);
+            }, 5000);
+        }
+    </script>
+    `
+}) %>

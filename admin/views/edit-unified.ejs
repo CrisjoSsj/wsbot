@@ -1,0 +1,188 @@
+<%- include('layout', {
+    pageTitle: 'Editar contenido',
+    activeTab: 'content',
+    username: username,
+    showMessages: true,
+    body: `
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Editar contenido</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0 text-gray-800">Gestionar contenido</h1>
+            <p class="text-muted mt-2">Haz clic en "Editar" para modificar cada sección de contenido individual.</p>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-9">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Vincular contenido con opciones del menú</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table align-middle">
+                            <thead>
+                                <tr>
+                                    <th style="width: 180px;">Sección</th>
+                                    <th style="width: 90px;">En menú</th>
+                                    <th style="width: 120px;">Número</th>
+                                    <th>Texto del botón</th>
+                                    <th style="width: 120px;">Emoji</th>
+                                    <th style="width: 130px;">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rowsBody">
+                                ${[
+                                    { key: 'horario', label: 'Horarios', defaultNumber: '5', defaultText: 'Horarios', emoji: '🕒' },
+                                    { key: 'envio', label: 'Envíos', defaultNumber: '', defaultText: 'Información de envíos', emoji: '🚚' },
+                                    { key: 'pago', label: 'Métodos de Pago', defaultNumber: '6', defaultText: 'Métodos de pago', emoji: '💳' },
+                                    { key: 'direcciones', label: 'Ubicaciones', defaultNumber: '2', defaultText: 'Ver direcciones', emoji: '📍' },
+                                    { key: 'precios', label: 'Lista de precios', defaultNumber: '3', defaultText: 'Lista de precios', emoji: '💲' },
+                                    { key: 'info_precios', label: 'Información de precios', defaultNumber: '7', defaultText: 'Información de precios', emoji: '📊' },
+                                    { key: 'contacto', label: 'Contacto', defaultNumber: '4', defaultText: 'Contactar asesor', emoji: '👩‍💼' },
+                                    { key: 'catalogo', label: 'Catálogo', defaultNumber: '8', defaultText: 'Ver catálogo', emoji: '📚' }
+                                ].map(sec => {
+                                    const opt = (config.menu?.options || []).find(o => (o.key === sec.key));
+                                    const inMenu = !!opt;
+                                    const number = opt?.number || sec.defaultNumber;
+                                    const text = opt?.text || sec.defaultText;
+                                    const emoji = opt?.emoji || sec.emoji || '';
+                                    return `
+                                        <tr data-key="${sec.key}">
+                                            <td><strong>${sec.label}</strong></td>
+                                            <td>
+                                                <div class="form-check form-switch">
+                                                    <input class="form-check-input toggle-in-menu" type="checkbox" ${inMenu ? 'checked' : ''}>
+                                                </div>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control input-number" value="${number || ''}" placeholder="#" ${inMenu ? '' : 'disabled'}>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control input-text" value="${text || ''}" placeholder="Texto del botón" ${inMenu ? '' : 'disabled'}>
+                                            </td>
+                                            <td>
+                                                <input type="text" class="form-control input-emoji" value="${emoji || ''}" placeholder="Ej: 📍" ${inMenu ? '' : 'disabled'}>
+                                            </td>
+                                            <td>
+                                                <a href="/admin/edit/content/${sec.key}" class="btn btn-sm btn-outline-secondary">
+                                                    <i class="bi bi-pencil-square"></i> Editar
+                                                </a>
+                                            </td>
+                                        </tr>
+                                    `;
+                                }).join('')}
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="small text-muted">
+                        Consejo: usa los botones de "Editar" para modificar el contenido de cada sección.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-3">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold text-primary">Vista previa del menú</h6>
+                    <button type="button" class="btn btn-sm btn-outline-primary" onclick="updatePreview()">
+                        <i class="bi bi-arrow-clockwise"></i> Actualizar
+                    </button>
+                </div>
+                <div class="card-body">
+                    <div class="preview-box p-3 border rounded bg-light" style="font-family: monospace; white-space: pre-wrap; min-height: 200px; max-height: 350px; overflow-y: auto;">
+                        <div id="menuPreview"><p class="text-center text-muted">Cargando vista previa...</p></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    `,
+    extraScripts: `
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            console.log('Página de contenido unificado cargada');
+            const rowsBody = document.getElementById('rowsBody');
+            if (!rowsBody) {
+                console.error('No se encontró el elemento rowsBody');
+                return;
+            }
+
+            // Configuramos los listeners para los cambios
+            rowsBody.addEventListener('change', (e) => {
+                const row = e.target.closest('tr');
+                if (!row) return;
+                if (e.target.classList.contains('toggle-in-menu')) {
+                    const enabled = e.target.checked;
+                    row.querySelectorAll('.input-number, .input-text, .input-emoji').forEach(inp => inp.disabled = !enabled);
+                    updatePreview();
+                }
+            });
+
+            rowsBody.addEventListener('input', () => updatePreview());
+            
+            // Ejecutamos la actualización de la vista previa después de un breve retraso
+            // para asegurarnos de que el DOM esté completamente cargado
+            setTimeout(() => {
+                updatePreview();
+            }, 500);
+            
+            // Hacer que todos los campos sean de solo lectura, ya que se editarán en las vistas individuales
+            Array.from(rowsBody.querySelectorAll('input')).forEach(input => {
+                if (!input.classList.contains('toggle-in-menu')) {
+                    input.readOnly = true;
+                }
+            });
+
+            function updatePreview() {
+                try {
+                    // Obtenemos todas las filas donde el checkbox está activo
+                    const activeRows = Array.from(document.querySelectorAll('#rowsBody tr')).filter(tr => {
+                        const checkbox = tr.querySelector('.toggle-in-menu');
+                        return checkbox && checkbox.checked;
+                    });
+                    
+                    // Extraemos los datos de cada fila activa
+                    const options = activeRows.map(tr => ({
+                        number: tr.querySelector('.input-number').value.trim() || '?',
+                        text: tr.querySelector('.input-text').value.trim() || 'Opción',
+                        emoji: tr.querySelector('.input-emoji').value.trim() || ''
+                    }));
+                    
+                    // Si no hay opciones activas, mostramos un mensaje
+                    if (options.length === 0) {
+                        document.getElementById('menuPreview').innerHTML = '<p class="text-center text-muted">No hay opciones activadas en el menú</p>';
+                        return;
+                    }
+                    
+                    // Creamos la vista previa
+                    let preview = '━━━━━━━━━━━━━━━━━━━━━━\\n';
+                    preview += '🛍️ *MENÚ PRINCIPAL*\\n';
+                    preview += '━━━━━━━━━━━━━━━━━━━━━━\\n\\n';
+                    
+                    options.forEach(op => {
+                        let line = (op.number || '?') + '. ';
+                        if (op.emoji) line += op.emoji + ' ';
+                        line += '*' + (op.text || 'Opción') + '*';
+                        preview += line + '\\n';
+                    });
+                    
+                    // Actualizamos el HTML con la vista previa
+                    document.getElementById('menuPreview').innerHTML = '<pre>' + preview + '</pre>';
+                } catch (error) {
+                    document.getElementById('menuPreview').innerHTML = '<p class="text-center text-danger">Error al generar vista previa</p>';
+                }
+            }
+
+            // Previsualización inicial
+            updatePreview();
+        });
+    </script>
+    `
+}) %>

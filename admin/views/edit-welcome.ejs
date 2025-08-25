@@ -1,0 +1,223 @@
+<%- include('layout', {
+    pageTitle: 'Mensaje de Bienvenida',
+    activeTab: 'content',
+    username: username,
+    showMessages: true,
+    body: `
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="/admin/dashboard">Dashboard</a></li>
+                    <li class="breadcrumb-item active">Mensaje de Bienvenida</li>
+                </ol>
+            </nav>
+            <h1 class="h3 mb-0 text-gray-800">Mensaje de Bienvenida</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Personalizar Mensaje</h6>
+                </div>
+                <div class="card-body">
+                    <form id="welcomeForm">
+                        <div class="mb-3">
+                            <label for="title" class="form-label">Título</label>
+                            <input type="text" class="form-control" id="title" name="title" value="${config.menu?.welcome?.title || '¡BIENVENIDO/A A NUESTRA TIENDA!'}" required>
+                            <div class="form-text">Use NUESTRA TIENDA para que se reemplace automáticamente con el nombre de la tienda.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="message" class="form-label">Mensaje</label>
+                            <textarea class="form-control" id="message" name="message" rows="2" required>${config.menu?.welcome?.message || 'Estamos aquí para ayudarte con todo lo que necesites.'}</textarea>
+                        </div>
+
+                        <div class="mb-3">
+                            <label class="form-label">Opciones Rápidas</label>
+                            <div id="quickOptions">
+                                ${(config.menu?.welcome?.quickOptions || [
+                                    "Envía *1* para ver nuestro menú completo",
+                                    "Envía *3* para ver lista de precios",
+                                    "Envía *7* para explorar el catálogo",
+                                    "Envía *4* para hablar con un asesor real"
+                                ]).map((option, index) => `
+                                <div class="input-group mb-2 option-row">
+                                    <input type="text" class="form-control" name="quickOptions[]" value="${option}" required>
+                                    ${index > 0 ? `<button type="button" class="btn btn-outline-danger remove-option"><i class="bi bi-trash"></i></button>` : ''}
+                                </div>
+                                `).join('')}
+                            </div>
+                            <button type="button" id="addOption" class="btn btn-sm btn-outline-primary mt-2">
+                                <i class="bi bi-plus-circle"></i> Añadir opción
+                            </button>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="footer" class="form-label">Pie de mensaje</label>
+                            <input type="text" class="form-control" id="footer" name="footer" value="${config.menu?.welcome?.footer || '¡Gracias por contactarnos! Estamos para servirte.'}" required>
+                        </div>
+
+                        <div class="text-end">
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save me-2"></i>Guardar Cambios
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-lg-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Vista Previa</h6>
+                </div>
+                <div class="card-body">
+                    <div class="preview-box p-3 border rounded bg-light" style="font-family: monospace; white-space: pre-wrap;">
+                        <div id="welcomePreview"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-primary">Ayuda</h6>
+                </div>
+                <div class="card-body">
+                    <p>Este mensaje es enviado cuando un usuario saluda al bot por primera vez en el día.</p>
+                    <p>Consejos para el mensaje de bienvenida:</p>
+                    <ul>
+                        <li>Mantén el mensaje conciso y claro</li>
+                        <li>Incluye las opciones más importantes</li>
+                        <li>Usa emojis para hacerlo más amigable</li>
+                        <li>Puedes usar formato <code>*texto*</code> para negrita</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+    `,
+    extraScripts: `
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            // Manejar el envío del formulario
+            const form = document.getElementById('welcomeForm');
+            form.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                const quickOptions = Array.from(document.querySelectorAll('input[name="quickOptions[]"]')).map(input => input.value);
+                
+                const formData = {
+                    title: document.getElementById('title').value,
+                    message: document.getElementById('message').value,
+                    quickOptions: quickOptions,
+                    footer: document.getElementById('footer').value
+                };
+                
+                fetch('/admin/api/config/welcome', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(formData)
+                })
+                .then(response => response.json())
+                .then(data => {
+                    if (data.success) {
+                        showAlert('success', 'Mensaje de bienvenida guardado correctamente');
+                    } else {
+                        showAlert('danger', 'Error al guardar: ' + data.error);
+                    }
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    showAlert('danger', 'Error al comunicarse con el servidor');
+                });
+            });
+            
+            // Agregar nueva opción
+            document.getElementById('addOption').addEventListener('click', function() {
+                const optionsContainer = document.getElementById('quickOptions');
+                const newRow = document.createElement('div');
+                newRow.className = 'input-group mb-2 option-row';
+                newRow.innerHTML = 
+                    '<input type="text" class="form-control" name="quickOptions[]" value="" required>' +
+                    '<button type="button" class="btn btn-outline-danger remove-option"><i class="bi bi-trash"></i></button>';
+                optionsContainer.appendChild(newRow);
+                
+                // Actualizar vista previa
+                updatePreview();
+            });
+            
+            // Eliminar opción (delegación de eventos)
+            document.getElementById('quickOptions').addEventListener('click', function(e) {
+                if (e.target.classList.contains('remove-option') || e.target.parentElement.classList.contains('remove-option')) {
+                    const button = e.target.classList.contains('remove-option') ? e.target : e.target.parentElement;
+                    const row = button.closest('.option-row');
+                    row.remove();
+                    
+                    // Actualizar vista previa
+                    updatePreview();
+                }
+            });
+            
+            // Actualizar vista previa en tiempo real
+            const titleInput = document.getElementById('title');
+            const messageInput = document.getElementById('message');
+            const footerInput = document.getElementById('footer');
+            
+            titleInput.addEventListener('input', updatePreview);
+            messageInput.addEventListener('input', updatePreview);
+            footerInput.addEventListener('input', updatePreview);
+            
+            // También actualizar cuando cambian las opciones
+            document.getElementById('quickOptions').addEventListener('input', updatePreview);
+            
+            // Actualizar vista previa inicial
+            updatePreview();
+            
+            function updatePreview() {
+                const title = titleInput.value || '¡BIENVENIDO/A A NUESTRA TIENDA!';
+                const message = messageInput.value || 'Estamos aquí para ayudarte con todo lo que necesites.';
+                const footer = footerInput.value || '¡Gracias por contactarnos! Estamos para servirte.';
+                
+                const quickOptions = Array.from(document.querySelectorAll('input[name="quickOptions[]"]'))
+                    .map(input => '   👉 ' + input.value)
+                    .join('\\n');
+                
+                const preview = 
+                    '━━━━━━━━━━━━━━━━━━━━━━\\n' +
+                    '👋 *' + title.replace('NUESTRA TIENDA', '${config.storeName || "Tienda Demo"}') + '* 🛒\\n' +
+                    '━━━━━━━━━━━━━━━━━━━━━━\\n\\n' +
+                    '✨ ' + message + '\\n\\n' +
+                    '📌 *OPCIONES RÁPIDAS:*\\n' +
+                    quickOptions + '\\n\\n' +
+                    '🙏 ' + footer;
+                
+                document.getElementById('welcomePreview').textContent = preview;
+            }
+        });
+
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            const alertDiv = document.createElement('div');
+            alertDiv.className = 'alert alert-' + type + ' alert-dismissible fade show';
+            alertDiv.innerHTML = 
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            alertContainer.appendChild(alertDiv);
+
+            // Auto-cerrar después de 5 segundos
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    alertContainer.removeChild(alertDiv);
+                }, 150);
+            }, 5000);
+        }
+    </script>
+    `
+}) %>

@@ -1,64 +1,137 @@
 const qrcode = require('qrcode-terminal');
+const botConfig = require('./config/botConfig');
 
 // funcion para generar el texto del menú principal
-function generarTextoMenu(storeName) {
-  return [
-    '━━━━━━━━━━━━━━━━━━━━━━',
-    `🤖 ${storeName}`,
-    'Tu asistente en WhatsApp',
-    '━━━━━━━━━━━━━━━━━━━━━━',
-    '',
-    '🧭 Menú principal (elige un número):',
-    '1) Ver menú principal',
-    '2) Ayuda rápida',
-    '3) Horarios de atención',
-    '4) Información de envíos',
-    '5) Métodos de pago',
-    '0) Hablar con un asesor',
-    '9) Información de contacto'
-  ].join('\n');
+function generarTextoMenu() {
+  try {
+    const config = botConfig.obtenerConfiguracion();
+    let title = 'MENÚ PRINCIPAL';
+    let footerLines = ['📝 Envía el número de la opción que necesitas', '📲 También puedes escribir *precios*, *horarios*, etc.'];
+    let options = [];
+
+    // Nuevo formato: config.menu.options
+    if (config.menu && Array.isArray(config.menu.options)) {
+      title = config.menu.title || title;
+      // Opciones base obligatorias (1 y 4)
+      const baseOptions = [
+        { number: '1', text: 'Ver este menú', emoji: '' },
+        { number: '4', text: 'Contactar asesor', emoji: '' }
+      ];
+      // Unir opciones base con las del config, evitando duplicados
+      const configOptions = config.menu.options.map(op => ({
+        number: String(op.number ?? '').trim(),
+        text: String(op.text ?? '').trim(),
+        emoji: (op.emoji || '').trim()
+      })).filter(op => op.number && op.text);
+      // Si ya existen 1 o 4 en config, no duplicar
+      const allNumbers = configOptions.map(op => op.number);
+      const mergedOptions = [
+        ...baseOptions.filter(base => !allNumbers.includes(base.number)),
+        ...configOptions
+      ];
+      options = mergedOptions;
+      if (typeof config.menu.footer === 'string' && config.menu.footer.trim()) {
+        footerLines = [config.menu.footer.trim()];
+      }
+    }
+    // Formato legacy: config.menu.mainMenu
+    else if (config.menu && config.menu.mainMenu) {
+      const menu = config.menu.mainMenu;
+      title = menu.title || title;
+      options = (menu.options || []).map(op => ({ number: String(op.number), text: String(op.text), emoji: '' }));
+      if (Array.isArray(menu.footer) && menu.footer.length) footerLines = menu.footer;
+    }
+
+    if (!options.length) throw new Error('No hay opciones configuradas');
+
+    const opciones = options.map(op => {
+      const prefix = op.number + '. ';
+      const text = op.emoji ? `${op.emoji} *${op.text}*` : `*${op.text}*`;
+      return prefix + text;
+    });
+
+    const lineas = [
+      '━━━━━━━━━━━━━━━━━━━━━━',
+      `🛍️ *${title}*`,
+      '━━━━━━━━━━━━━━━━━━━━━━',
+      '',
+      ...opciones,
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━',
+      ...footerLines
+    ];
+
+    return lineas.join('\n');
+  } catch (error) {
+    console.error('Error generando texto del menú:', error);
+    // Fallback a un menú básico si hay error
+    return [
+      '━━━━━━━━━━━━━━━━━━━━━━',
+      '🛍️ *MENÚ PRINCIPAL*',
+      '━━━━━━━━━━━━━━━━━━━━━━',
+      '',
+      '1️⃣  *Ver este menú*',
+      '2️⃣  *Ver direcciones*',
+      '3️⃣  *Lista de precios*',
+      '4️⃣  *Contactar asesor*',
+      '5️⃣  *Horarios de atención*',
+      '6️⃣  *Métodos de pago*',
+      '7️⃣  *Catálogo completo*',
+      '',
+      '━━━━━━━━━━━━━━━━━━━━━━',
+      'Envía el número de la opción para continuar o escribe palabras como *precios* o *horarios*.'
+    ].join('\n');
+  }
 }
 
-// funcion para generar el texto de ayuda rápida
-function generarTextoAyuda() {
-  return [
-    'ℹ️ Ayuda rápida:',
-    '- Envía 1 para ver el menú principal.',
-    '- Envía 0 para hablar con un asesor humano.',
-    '- Para volver al bot, escribe "bot".'
-  ].join('\n');
-}
+// Función de ayuda rápida eliminada (integrada en el menú principal)
 
-// funcion para generar el menú del panel de administración
-function generarMenuAdmin() {
-  return [
-    '🛠️ Panel de administración',
-    '',
-    'Editar contenidos:',
-    '- nombre: Nuevo Nombre de Tienda',
-    '- horario: Texto de horarios',
-    '- envio: Texto de envíos',
-    '- pago: Texto de formas de pago',
-    '',
-    'Comandos personalizados:',
-    '- cmd:add palabra: respuesta  → crea/actualiza',
-    '- cmd:del palabra            → elimina',
-    '- cmd:list                   → listar',
-    '',
-    'Otros:',
-    '- config?     → ver configuración actual',
-    '- cerrarsesion (o logout) → salir del modo admin'
-  ].join('\n');
-}
+// La función para generar el menú de administración por chat ha sido eliminada
 
 // funcion para generar el texto de bienvenida diaria
-function generarTextoBienvenida(storeName) {
-  return [
-    `¡Hola! 👋 Soy ${storeName}.`,
-    'Para empezar:',
-    '- Envía 1 para ver el menú de opciones',
-    '- Envía 0 para hablar con una persona real'
-  ].join('\n');
+// funcion para generar el texto de bienvenida
+function generarTextoBienvenida() {
+  try {
+    const config = botConfig.obtenerConfiguracion();
+    const welcome = config.menu.welcome;
+    const quickOptions = welcome.quickOptions.map(op => `   👉 ${op}`);
+    const storeName = config.storeName || 'Tienda';
+    
+    const lineas = [
+      '━━━━━━━━━━━━━━━━━━━━━━',
+      `👋 *${welcome.title.replace('NUESTRA TIENDA', storeName)}* 🛒`,
+      '━━━━━━━━━━━━━━━━━━━━━━',
+      '',
+      `✨ ${welcome.message}`,
+      '',
+      '📌 *OPCIONES RÁPIDAS:*',
+      ...quickOptions,
+      '',
+      `🙏 ${welcome.footer}`
+    ];
+    
+    return lineas.join('\n');
+  } catch (error) {
+    console.error('Error generando texto de bienvenida:', error);
+    // Fallback a un texto básico si hay error
+    const config = botConfig.obtenerConfiguracion();
+    const storeName = config.storeName || 'Tienda';
+    return [
+      '━━━━━━━━━━━━━━━━━━━━━━',
+      `👋 *¡Bienvenido/a a ${storeName}!* 🛒`,
+      '━━━━━━━━━━━━━━━━━━━━━━',
+      '',
+      '✨ Estamos aquí para ayudarte. Elige una opción o escribe tu pregunta.',
+      '',
+      '📌 *Atajos:*',
+      '   👉 Envía *1* para ver el menú',
+      '   👉 Envía *3* para ver precios',
+      '   👉 Envía *7* para ver el catálogo',
+      '   👉 Envía *4* para hablar con un asesor humano',
+      '',
+      '🙏 ¡Gracias por contactarnos!'
+    ].join('\n');
+  }
 }
 
 // funcion para imprimir el QR de autenticación en consola
@@ -69,8 +142,6 @@ function printQr(qr) {
 
 module.exports = {
   generarTextoMenu,
-  generarTextoAyuda,
-  generarMenuAdmin,
   generarTextoBienvenida,
   printQr
 };

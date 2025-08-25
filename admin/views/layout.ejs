@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>WsBot - <%= typeof pageTitle !== 'undefined' ? pageTitle : 'Panel de Administración' %></title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.10.3/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="/admin/css/styles.css">
+    <link rel="stylesheet" href="/admin/css/theme.css">
+    <link rel="stylesheet" href="/admin/css/enhanced.css">
+    <link rel="stylesheet" href="/admin/css/responsive.css">
+    <% if (typeof extraStyles !== 'undefined') { %>
+        <%- extraStyles %>
+    <% } %>
+</head>
+<body>
+    <% if (typeof hideNavbar === 'undefined' || !hideNavbar) { %>
+        <nav class="navbar navbar-expand-lg navbar-dark bg-primary">
+            <div class="container-fluid">
+                <a class="navbar-brand" href="/admin/dashboard">
+                    <i class="bi bi-robot"></i> WsBot Admin
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse" id="navbarNav">
+                    <ul class="navbar-nav me-auto">
+                        <li class="nav-item">
+                            <a class="nav-link <%= typeof activeTab !== 'undefined' && activeTab === 'dashboard' ? 'active' : '' %>" href="/admin/dashboard">
+                                <i class="bi bi-speedometer2"></i> Dashboard
+                            </a>
+                        </li>
+                        <!-- El enlace Editar Menú ahora está dentro del dropdown Configuración -->
+                        <script>
+                            // Función para actualizar el estado en la navegación
+                            function updateNavStatus() {
+                                fetch('/admin/api/whatsapp/status')
+                                    .then(res => res.json())
+                                    .then(data => {
+                                        const statusElement = document.getElementById('navStatus');
+                                        if (!statusElement) return;
+                                        
+                                        if (data.status === 'ready') {
+                                            statusElement.innerHTML = '<span class="badge bg-success">CONECTADO</span>';
+                                        } else if (data.status === 'connecting') {
+                                            statusElement.innerHTML = '<span class="badge bg-warning">CONECTANDO</span>';
+                                        } else if (data.status === 'disconnected') {
+                                            statusElement.innerHTML = '<span class="badge bg-danger">DESCONECTADO</span>';
+                                        } else {
+                                            statusElement.innerHTML = '<span class="badge bg-secondary">' + data.status.toUpperCase() + '</span>';
+                                        }
+                                    })
+                                    .catch(err => {
+                                        console.error("Error actualizando estado en nav:", err);
+                                    });
+                            }
+                            
+                            // Actualizar cada 5 segundos
+                            document.addEventListener('DOMContentLoaded', () => {
+                                setTimeout(updateNavStatus, 1000);
+                                setInterval(updateNavStatus, 5000);
+                            });
+                        </script>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle <%= typeof activeTab !== 'undefined' && activeTab === 'settings' ? 'active' : '' %>" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-sliders"></i> Configuración
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li><a class="dropdown-item <%= typeof activeTab !== 'undefined' && activeTab === 'general' ? 'active' : '' %>" href="/admin/edit/general"><i class="bi bi-gear"></i> General</a></li>
+                                <li><a class="dropdown-item <%= typeof activeTab !== 'undefined' && activeTab === 'ai' ? 'active' : '' %>" href="/admin/edit/ai"><i class="bi bi-robot"></i> Configuración de IA</a></li>
+                                <li><a class="dropdown-item <%= typeof activeTab !== 'undefined' && activeTab === 'context' ? 'active' : '' %>" href="/admin/edit/context"><i class="bi bi-journal-text"></i> Contexto IA</a></li>
+                                <li><hr class="dropdown-divider"></li>
+                                <!-- Enlace para editar el menú está ubicado dentro del dropdown de Configuración -->
+                                <li><a class="dropdown-item <%= typeof activeTab !== 'undefined' && activeTab === 'menu' ? 'active' : '' %>" href="/admin/edit/menu"><i class="bi bi-list-ul"></i> Editar Menú</a></li>
+                            </ul>
+                        </li>
+                        <!-- Botón de recargar configuración eliminado -->
+                    </ul>
+                    <ul class="navbar-nav">
+                        <li class="nav-item me-2">
+                            <span class="nav-link" id="whatsappStatusIndicator">
+                                <span id="navStatus"></span>
+                            </span>
+                        </li>
+                        <li class="nav-item dropdown">
+                            <a class="nav-link dropdown-toggle" href="#" role="button" data-bs-toggle="dropdown">
+                                <i class="bi bi-person-circle"></i> <%= typeof username !== 'undefined' ? username : 'Usuario' %>
+                            </a>
+                            <ul class="dropdown-menu dropdown-menu-end">
+                                <li><a class="dropdown-item" href="/admin/logout"><i class="bi bi-box-arrow-right"></i> Cerrar Sesión</a></li>
+                            </ul>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </nav>
+    <% } %>
+
+    <div class="container-fluid mt-4">
+        <% if (typeof showMessages !== 'undefined' && showMessages) { %>
+            <div id="alertContainer"></div>
+        <% } %>
+        
+        <%- body %>
+    </div>
+
+    <footer class="footer mt-auto py-3">
+        <div class="container text-center">
+            <span class="footer-brand">WsBot - Panel de Administración</span><br>
+            <span class="footer-contact">&copy; <%= new Date().getFullYear() %> | by <a href="https://instagram.com/crisjo_ssj" target="_blank" style="color:#25D366;font-weight:bold;">@crisjo_ssj</a> | contacto: <a href="mailto:crisjo_ssj@gmail.com" style="color:#25D366;">crisjo_ssj@gmail.com</a></span>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0-alpha1/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+    <script src="/admin/js/main.js"></script>
+    <script src="/admin/js/whatsapp-status.js"></script>
+    <script src="/admin/js/status-fix.js"></script>
+    <script src="/admin/js/whatsapp-controls.js"></script>
+    <script>
+        // Función global para mostrar alertas
+        function showAlert(type, message) {
+            const alertContainer = document.getElementById('alertContainer');
+            if (!alertContainer) return;
+            
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+            alertDiv.innerHTML = 
+                message +
+                '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+            alertContainer.appendChild(alertDiv);
+
+            // Auto-cerrar después de 5 segundos
+            setTimeout(() => {
+                alertDiv.classList.remove('show');
+                setTimeout(() => {
+                    alertContainer.removeChild(alertDiv);
+                }, 150);
+            }, 5000);
+        }
+        
+        // Configurar el indicador de estado de WhatsApp para mostrar un modal cuando se hace clic
+        document.addEventListener('DOMContentLoaded', function() {
+            const statusIndicator = document.getElementById('whatsappStatusIndicator');
+            if (statusIndicator) {
+                statusIndicator.addEventListener('click', function(e) {
+                    e.preventDefault();
+                    
+                    // Crear modal para opciones de WhatsApp
+                    const modalHTML = `
+                        <div class="modal fade" id="whatsappStatusModal" tabindex="-1">
+                            <div class="modal-dialog modal-sm">
+                                <div class="modal-content">
+                                    <div class="modal-header">
+                                        <h5 class="modal-title">Estado de WhatsApp</h5>
+                                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                    </div>
+                                    <div class="modal-body">
+                                        <div id="whatsappStatusDetails" class="mb-3">Cargando...</div>
+                                        <div class="d-grid gap-2">
+                                            <button class="btn btn-warning btn-sm" onclick="restartWhatsapp()">
+                                                <i class="bi bi-arrow-clockwise"></i> Reiniciar Cliente
+                                            </button>
+                                            <button class="btn btn-danger btn-sm" onclick="logoutWhatsapp()">
+                                                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    `;
+                    
+                    // Añadir el modal al DOM
+                    const modalContainer = document.createElement('div');
+                    modalContainer.innerHTML = modalHTML;
+                    document.body.appendChild(modalContainer);
+                    
+                    // Mostrar el modal
+                    const modal = new bootstrap.Modal(document.getElementById('whatsappStatusModal'));
+                    modal.show();
+                    
+                    // Actualizar el estado en el modal
+                    fetch('/admin/api/whatsapp/status')
+                        .then(response => response.json())
+                        .then(data => {
+                            const statusElement = document.getElementById('whatsappStatusDetails');
+                            if (statusElement) {
+                                let statusClass = '';
+                                let statusText = '';
+                                
+                                if (data.status === 'ready') {
+                                    statusClass = 'text-success';
+                                    statusText = 'CONECTADO';
+                                } else if (data.status === 'connecting') {
+                                    statusClass = 'text-warning';
+                                    statusText = 'CONECTANDO';
+                                } else if (data.status === 'disconnected') {
+                                    statusClass = 'text-danger';
+                                    statusText = 'DESCONECTADO';
+                                } else {
+                                    statusClass = 'text-secondary';
+                                    statusText = data.status.toUpperCase();
+                                }
+                                
+                                const lastUpdate = new Date(data.lastUpdate).toLocaleString();
+                                
+                                statusElement.innerHTML = `
+                                    <p class="mb-1">Estado: <span class="${statusClass} fw-bold">${statusText}</span></p>
+                                    <p class="mb-1">Última actualización: ${lastUpdate}</p>
+                                    <p class="mb-0">QR disponible: ${data.hasQrCode ? 'Sí' : 'No'}</p>
+                                `;
+                            }
+                        })
+                        .catch(error => {
+                            const statusElement = document.getElementById('whatsappStatusDetails');
+                            if (statusElement) {
+                                statusElement.innerHTML = `<p class="text-danger">Error al obtener estado: ${error.message}</p>`;
+                            }
+                        });
+                    
+                    // Eliminar el modal del DOM cuando se oculte
+                    document.getElementById('whatsappStatusModal').addEventListener('hidden.bs.modal', function() {
+                        document.body.removeChild(modalContainer);
+                    });
+                });
+            }
+        });
+        
+    // Botón de recargar configuración eliminado
+    </script>
+    <% if (typeof extraScripts !== 'undefined') { %>
+        <%- extraScripts %>
+    <% } %>
+</body>
+</html>

@@ -1,0 +1,83 @@
+<%- include('layout', {
+    pageTitle: 'Error ' + status,
+    activeTab: '',
+    username: null,
+    showMessages: false,
+    body: `
+        <style>
+            body, .container, .row, .card, .card-header, .card-body, .breadcrumb, .preview-box {
+                background: var(--bg-primary, #181c24) !important;
+                color: var(--text-primary, #f1f1f1) !important;
+            }
+            .card {
+                background: var(--card-bg, #232836) !important;
+                color: var(--text-primary, #f1f1f1) !important;
+                border: none;
+                box-shadow: 0 0.15rem 1.75rem 0 #10131a99;
+            }
+            .card-header {
+                background: var(--bg-secondary, #232836) !important;
+                color: var(--accent-color, #25D366) !important;
+                border-bottom: 1px solid var(--border-color, #333) !important;
+            }
+            .breadcrumb {
+                background: transparent !important;
+                color: var(--text-secondary, #b0b0b0) !important;
+            }
+            .form-control, .input-group-text {
+                background: #232836 !important;
+                color: #f1f1f1 !important;
+                border: 1px solid var(--border-color, #333) !important;
+            }
+            .form-control:focus {
+                background: #232836 !important;
+                color: #fff !important;
+                border-color: var(--accent-color, #25D366) !important;
+                box-shadow: 0 0 0 0.2rem #25d36633;
+            }
+            .btn-primary {
+                background: var(--accent-color, #25D366) !important;
+                border: none !important;
+                color: #181c24 !important;
+                font-weight: bold;
+            }
+            .btn-primary:hover {
+                background: var(--highlight-color, #128C7E) !important;
+                color: #fff !important;
+            }
+            .alert-info {
+                background: #1a232d !important;
+                color: #b3e6c7 !important;
+                border: 1px solid #25D366 !important;
+            }
+        </style>
+        <div class="container mt-5">
+        <div class="row justify-content-center">
+            <div class="col-md-8">
+                <div class="card shadow">
+                    <div class="card-body text-center p-5">
+                        <h1 class="display-1 text-danger fw-bold">Error ${status}</h1>
+                        <h3 class="mt-3 mb-4">${message}</h3>
+                        <p class="text-muted mb-4">Lo sentimos, ha ocurrido un error en la solicitud.</p>
+                        <a href="/admin/dashboard" class="btn btn-primary btn-lg">
+                            <i class="bi bi-house-door me-2"></i>Volver al Dashboard
+                        </a>
+                    </div>
+                </div>
+                
+                ${error && Object.keys(error).length > 0 ? `
+                <div class="card mt-4 shadow">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Detalles del error</h5>
+                    </div>
+                    <div class="card-body">
+                        <pre class="bg-light p-3 rounded"><code>${JSON.stringify(error, null, 2)}</code></pre>
+                    </div>
+                </div>
+                ` : ''}
+            </div>
+        </div>
+    </div>
+    `,
+    extraScripts: ``
+}) %>

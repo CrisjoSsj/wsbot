@@ -1,45 +1,36 @@
+require('dotenv').config();
 // Servidor Express básico para mantener el proyecto activo en Glitch
 const express = require('express');
-const {
-  generarTextoMenu,
-  generarTextoAyuda,
-  generarMenuAdmin,
-  generarTextoBienvenida,
-  printQr
-} = require('./prints');
-const {
-  debeEnviarBienvenidaDiaria,
-  parseLoginUser,
-  parseLoginPass,
-  esComandoNombre,
-  esComandoHorario,
-  esComandoEnvio,
-  esComandoPago,
-  esComandoConfig,
-  esComandoLogout,
-  parseCmdAdd,
-  parseCmdDel,
-  esCmdList,
-  obtenerOpcionNumerica
-} = require('./inputs');
+const path = require('path');
+const { printQr } = require('./prints');
 const { crearClienteWhatsApp, iniciarCliente } = require('./adapters/whatsapp');
-const { botConfig, cargarConfigDesdeDisco, guardarConfigEnDisco } = require('./config/botConfig');
+const botConfig = require('./config/botConfig');
 const { obtenerEstadoDelChat } = require('./state/chatState');
+// Se elimina el uso de contenidos y productos estáticos en favor de IA + asesor
 const {
-  agregarComandoPersonalizado,
-  eliminarComandoPersonalizado,
-  listarComandosPersonalizados
-} = require('./services/comandosPersonalizados.service');
+  iniciarConfigWatcher,
+  recargarConfiguracion
+} = require('./services/configWatcher.service');
+const whatsappStatus = require('./services/whatsappStatus.service');
 
+// Importar panel de administración
+const { iniciarPanelAdmin } = require('./admin');
+
+const helmet = require('helmet');
+const cors = require('cors');
 const app = express();
 const PORT = process.env.PORT || 3000;
 const IS_WINDOWS = process.platform === 'win32';
-const ADMIN_USER = process.env.ADMIN_USER || 'admin';
-const ADMIN_PASS = process.env.ADMIN_PASS || '1234';
-const ADMIN_TRIGGER = (process.env.ADMIN_TRIGGER || 'panel#admin').toLowerCase();
+
+// Seguridad HTTP y CORS
+app.use(helmet());
+app.use(cors()); // Puedes personalizar los orígenes permitidos aquí
 
 // Cargar configuración al inicio
-cargarConfigDesdeDisco();
+botConfig.cargarConfigDesdeDisco();
+
+// Iniciar el observador de cambios en el archivo de configuración
+iniciarConfigWatcher();
 
 // Funciones de impresión y parseo en `prints.js` e `inputs.js`
 
@@ -52,240 +43,485 @@ app.get('/health', (_req, res) => {
   res.json({ ok: true, status: 'alive' });
 });
 
+// Importar servicio de AI
+const aiService = require('./services/ai.service');
+
+
+
+// Helper para enviar respuestas (sin añadir pista automática)
+async function replyWithAdvisorHint(message, text) {
+  try {
+    const body = String(text || '');
+    return await message.reply(body);
+  } catch (e) {
+    console.error('Error en replyWithAdvisorHint:', e);
+    try {
+      return await message.reply(String(text || ''));
+    } catch (err) {
+      console.error('Error enviando fallback en replyWithAdvisorHint:', err);
+    }
+  }
+}
+
 // Evento: Recepción de mensajes y respuestas automáticas
 async function onMessageHandler(message) {
   try {
-    const rawText = (message.body || '').trim();
+    // Ignorar mensajes vacíos, undefined o null
+    if (!message || !message.body) {
+      console.log('Mensaje ignorado: contenido vacío o indefinido');
+      return;
+    }
+    // Ignorar mensajes del sistema o con remitente vacío
+    if (!message.from || message.from === 'status@broadcast') {
+      console.log('Mensaje ignorado: remitente indefinido o mensaje de estado');
+      return;
+    }
+    // Verificar si el mensaje viene de un chat archivado o de un grupo
+    try {
+      const chat = await message.getChat();
+      if (chat.archived) {
+        console.log(`Mensaje ignorado de chat archivado: ${message.from}`);
+        return; // No responder a chats archivados
+      }
+      
+      // Verificar si es un grupo y no responder
+      if (chat.isGroup) {
+        console.log(`Mensaje ignorado de grupo: ${message.from}`);
+        return; // No responder a mensajes de grupos
+      }
+    } catch (error) {
+      console.error('Error al verificar el tipo de chat:', error);
+      // Continuar procesando el mensaje aunque no podamos verificar el tipo de chat
+    }
+    // Limitar longitud del mensaje para evitar desbordamientos
+    const rawText = (message.body || '').trim().substring(0, 1000); // Limitar a 1000 caracteres
     const texto = rawText.toLowerCase();
     const chatId = message.from;
+    // Inicializar o recuperar estado del chat de forma segura
     const state = obtenerEstadoDelChat(chatId);
 
-    // =========================
-    // Bloque: Autenticación admin
-    // Dos formas de entrar: (1) disparador secreto ADMIN_TRIGGER, (2) user/pass
-    // =========================
+  // --- BUFFER DE MENSAJES POR USUARIO ---
+    if (!global.userMessageBuffers) global.userMessageBuffers = {};
+    if (!global.userMessageTimers) global.userMessageTimers = {};
+    if (!global.userMessageBuffers[chatId]) global.userMessageBuffers[chatId] = [];
 
-    // (1) Disparador secreto para iniciar flujo de login sin ser predecible
-    if (texto === ADMIN_TRIGGER) {
-      await message.reply('🔐 Acceso administrativo. Escribe: user TU_USUARIO');
-      return;
-    }
-    const userFromMsg = parseLoginUser(rawText);
-    if (userFromMsg) {
-      state.pendingUser = userFromMsg;
-      await message.reply('Usuario recibido. Ahora escribe: pass TU_PASSWORD');
-      return;
-    }
-
-    const passFromMsg = parseLoginPass(rawText);
-    if (passFromMsg) {
-      const pass = passFromMsg;
-      const user = state.pendingUser || '';
-      if (user === ADMIN_USER && pass === ADMIN_PASS) {
-        state.isAdmin = true;
-        delete state.pendingUser;
-        await message.reply('✅ Autenticación correcta. Modo admin activo en este chat.\n\n' + generarMenuAdmin());
-      } else {
-        state.isAdmin = false;
-        delete state.pendingUser;
-        await message.reply('❌ Credenciales inválidas.');
-      }
-      return;
-    }
-
-    // =========================
-    // Bloque: Comandos admin para personalizar textos (no listados en menú)
-    // Formato: "nombre: Tienda X", "horario: ...", "envio: ...", "pago: ...", "config?", "logout"
-    // =========================
-    if (state.isAdmin) {
-      if (esComandoNombre(rawText)) {
-        botConfig.storeName = rawText.split(':').slice(1).join(':').trim() || botConfig.storeName;
-        guardarConfigEnDisco();
-        await message.reply(`✔️ Nombre actualizado: ${botConfig.storeName}`);
-        return;
-      }
-      if (esComandoHorario(rawText)) {
-        botConfig.horarioText = rawText.split(':').slice(1).join(':').trim() || botConfig.horarioText;
-        guardarConfigEnDisco();
-        await message.reply('✔️ Horario actualizado.');
-        return;
-      }
-      if (esComandoEnvio(rawText)) {
-        botConfig.envioText = rawText.split(':').slice(1).join(':').trim() || botConfig.envioText;
-        guardarConfigEnDisco();
-        await message.reply('✔️ Envío actualizado.');
-        return;
-      }
-      if (esComandoPago(rawText)) {
-        botConfig.pagoText = rawText.split(':').slice(1).join(':').trim() || botConfig.pagoText;
-        guardarConfigEnDisco();
-        await message.reply('✔️ Pago actualizado.');
-        return;
-      }
-      if (esComandoConfig(texto)) {
-        await message.reply(
-          [
-            '⚙️ Config actual:',
-            `- nombre: ${botConfig.storeName}`,
-            `- horario: ${botConfig.horarioText}`,
-            `- envio: ${botConfig.envioText}`,
-            `- pago: ${botConfig.pagoText}`,
-            `- comandos: ${Object.keys(botConfig.customCommands).length} definidos`
-          ].join('\n')
-        );
-        return;
-      }
-      if (esComandoLogout(texto)) {
-        state.isAdmin = false;
-        await message.reply('🔒 Sesión admin cerrada.');
-        return;
-      }
-
-      // Gestión de comandos personalizados
-      // cmd:add palabra: respuesta
-      const addCmd = parseCmdAdd(rawText);
-      if (addCmd) {
-        const { palabra, respuesta } = addCmd;
-        agregarComandoPersonalizado(palabra, respuesta);
-        await message.reply(`✔️ Comando "${palabra}" guardado.`);
-        return;
-      }
-
-      // cmd:del palabra
-      const delPalabra = parseCmdDel(rawText);
-      if (delPalabra !== null) {
-        const palabra = delPalabra;
-        if (!palabra) {
-          await message.reply('Formato inválido. Usa: cmd:del palabra');
-          return;
-        }
-        const eliminado = eliminarComandoPersonalizado(palabra);
-        if (eliminado) {
-          await message.reply(`🗑️ Comando "${palabra}" eliminado.`);
-        } else {
-          await message.reply('Ese comando no existe.');
-        }
-        return;
-      }
-
-      // cmd:list
-      if (esCmdList(texto)) {
-        const entries = listarComandosPersonalizados();
-        if (!entries.length) {
-          await message.reply('No hay comandos personalizados definidos.');
-          return;
-        }
-        const listado = entries.map(([k, v]) => `- ${k}: ${v}`).join('\n');
-        await message.reply('📋 Comandos personalizados:\n' + listado);
-        return;
-      }
-      // Si es admin y escribe algo no reconocido, no respondemos (o podríamos enviar una ayuda admin)
-    }
-
-    // Modo asesor (humano): silenciar respuestas automáticas
-    if (state.humanMode) {
-      if (['bot', 'salir asesor', 'salir', 'cancelar asesor', 'reanudar'].includes(texto)) {
+    // Si está en modo asesor humano, no usar buffer
+      if (state.humanMode) {
+      // Si el usuario quiere volver al asistente virtual
+      if (['bot'].includes(texto)) {
         state.humanMode = false;
-        await message.reply('✅ Modo bot reactivado. Puedes escribir "menu", "catalogo" o continuar con "comprar".');
-      } else {
-        // No responder para no interferir con el asesor humano
-        // Puedes integrar aquí un reenvío a un panel interno si lo deseas
+        // Reactivar IA cuando el admin/usuario escribe 'bot'
+        state.aiMode = true;
+        await replyWithAdvisorHint(message, [
+          '🤖 Asistente activado',
+          '━━━━━━━━━━━━━━━━━━━━━━',
+          '',
+          'El asistente virtual está listo. Escribe tu pregunta y te responderé. 😊',
+          '',
+          'Envía *menu1* para volver al menú en cualquier momento.'
+        ].join('\n'));
+        return;
       }
+
+  // Si quiere volver al menú estático desde la conversación con el asesor
+  // Solo permitimos el comando exacto 'menu1' desde humanMode
+  if (texto === 'menu1') {
+        // Limpiar buffers y timers
+        global.userMessageBuffers[chatId] = [];
+        if (global.userMessageTimers[chatId]) {
+          clearTimeout(global.userMessageTimers[chatId]);
+          delete global.userMessageTimers[chatId];
+        }
+  state.humanMode = false;
+  state.aiMode = false;
+  // Log de auditoría: salida de humanMode
+  console.log(`[AUDIT] ${new Date().toISOString()} - Chat ${chatId} - SALIDA humanMode (volviendo al menú)`);
+  const { generarTextoMenu } = require('./prints');
+  await replyWithAdvisorHint(message, generarTextoMenu());
+        return;
+      }
+
+      // Si no es comando relevante, no interferir con la conversación humana
+      return;
+    }
+    
+  // Comando para volver al menú estático y desactivar IA (menu1)
+  if (texto === 'menu1') {
+      // Limpiar buffers y timers
+      global.userMessageBuffers[chatId] = [];
+      if (global.userMessageTimers[chatId]) {
+        clearTimeout(global.userMessageTimers[chatId]);
+        delete global.userMessageTimers[chatId];
+      }
+      state.aiMode = false;
+      state.humanMode = false;
+  const { generarTextoMenu } = require('./prints');
+  await replyWithAdvisorHint(message, generarTextoMenu());
       return;
     }
 
-    // Respuestas automáticas principales
-    if ([
-      'hola', 'hello', 'buenas', 'buenos dias', 'buenos días', 'buenas tardes', 'buenas noches'
-    ].includes(texto)) {
-      if (debeEnviarBienvenidaDiaria(state)) await message.reply(generarTextoBienvenida(botConfig.storeName));
-      // Si ya se envió el saludo hoy, no responder más al saludo (ignorar)
-      return;
-    }
-
-    // Menú por número 1
-    const opcion = obtenerOpcionNumerica(texto);
-    if (opcion === '1') {
-      await message.reply(generarTextoMenu(botConfig.storeName));
-      return;
-    }
-
-    // Información general
-    if (opcion === '2') {
-      await message.reply(generarTextoAyuda());
-      return;
-    }
-
-    if (opcion === '3') {
-      await message.reply(botConfig.horarioText);
-      return;
-    }
-
-    if (opcion === '4') {
-      await message.reply(botConfig.envioText);
-      return;
-    }
-
-    if (opcion === '5') {
-      await message.reply(botConfig.pagoText);
-      return;
-    }
-
-    if (opcion === '0') {
+    // Si el usuario envía '4' mientras la IA está activa, derivar inmediatamente a asesor humano
+  if (texto === '4' && state.aiMode) {
+      // Limpiar buffers y timers
+      global.userMessageBuffers[chatId] = [];
+      if (global.userMessageTimers[chatId]) {
+        clearTimeout(global.userMessageTimers[chatId]);
+        delete global.userMessageTimers[chatId];
+      }
+      // Cambiar a modo humano
+      state.aiMode = false;
       state.humanMode = true;
-      await message.reply('👩‍💼 Te conectaremos con un asesor humano. El bot dejará de responder automáticamente. Escribe "bot" cuando quieras volver al modo automático. Tu proceso de compra, si estaba en curso, quedará pausado.');
+      await replyWithAdvisorHint(message, [
+
+        '👩‍💼 Te conectamos con un asesor',
+        '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+        '',
+        'Gracias — en breve un asesor humano te atenderá. 😊',
+        '',
+        'Puedes escribir *bot* para volver al asistente o *menu1* para ver el menú.'
+      ].join('\n'));
       return;
     }
 
-    if (opcion === '9') {
-      await message.reply('📞 Para hablar con una persona real, escribe "asesor".');
+    // Si la IA está activa para este chat, usar buffer de 10s para agrupar mensajes
+    if (state.aiMode) {
+      try {
+        // Push al buffer del chat
+        global.userMessageBuffers[chatId].push(rawText);
+
+        // Reiniciar timer de 10s
+        if (global.userMessageTimers[chatId]) clearTimeout(global.userMessageTimers[chatId]);
+        global.userMessageTimers[chatId] = setTimeout(async () => {
+          try {
+            const messages = global.userMessageBuffers[chatId].filter(Boolean);
+            const combined = messages.join('\n');
+
+            // Limpiar buffer y timer
+            global.userMessageBuffers[chatId] = [];
+            clearTimeout(global.userMessageTimers[chatId]);
+            delete global.userMessageTimers[chatId];
+
+            const aiResponse = await aiService.processMessageWithAI(chatId, combined, state);
+            if (aiResponse && aiResponse.success) {
+              await replyWithAdvisorHint(message, aiResponse.text);
+              return;
+            } else {
+              // IA no puede responder -> derivar a asesor humano y desactivar IA
+              state.aiMode = false;
+              state.humanMode = true;
+              console.log(`[AUDIT] ${new Date().toISOString()} - Chat ${chatId} - ENTRADA humanMode (IA no pudo responder)`);
+              await replyWithAdvisorHint(message, [
+                '👩‍💼 Te conectamos con un asesor',
+                '━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━',
+                '',
+                'No tengo una respuesta clara para esto; te paso con un asesor humano. 👩‍💼',
+                '',
+                'Envía *bot* para volver al asistente o *menu1* para ver el menú.'
+              ].join('\n'));
+              return;
+            }
+          } catch (aiError) {
+            console.error('Error procesando IA en buffer:', aiError);
+            state.aiMode = false;
+            state.humanMode = true;
+            console.log(`[AUDIT] ${new Date().toISOString()} - Chat ${chatId} - ENTRADA humanMode (error en IA)`);
+              try {
+              await replyWithAdvisorHint(message, [
+                '🔄 Ups — tuvimos un problema técnico procesando tu solicitud. Te conecto con un asesor humano.',
+                '',
+                'Disculpa la molestia; puedes escribir *bot* para intentar volver al asistente o *menu1* para ver el menú.'
+              ].join('\n'));
+            } catch (replyErr) {
+              console.error('Error enviando mensaje tras fallo de IA buffered:', replyErr);
+            }
+            return;
+          }
+        }, 10000);
+
+        // Acknowledgement opcional (no enviar respuesta inmediata para no romper conversación), simplemente esperar al timer
+        return;
+      } catch (aiError) {
+        console.error('Error iniciando buffer de IA:', aiError);
+        state.aiMode = false;
+        state.humanMode = true;
+        console.log(`[AUDIT] ${new Date().toISOString()} - Chat ${chatId} - ENTRADA humanMode (error iniciando buffer)`);
+        await replyWithAdvisorHint(message, [
+          '🔄 Ups — tuvimos un problema técnico iniciando el asistente. Te conecto con un asesor humano.',
+          '',
+          'Puedes escribir *bot* para intentar volver al asistente o *menu1* para ver el menú.'
+        ].join('\n'));
+        return;
+      }
+    }
+
+    // Determinar si es una opción numérica (1 dígito)
+    const isNumericOption = /^[1-9]$/.test(texto);
+
+  // Protección extra: si por alguna razón seguimos en humanMode, no procesar opciones numéricas
+      if (state.humanMode && isNumericOption) {
+      await replyWithAdvisorHint(message, [
+        'Estás en conversación con un asesor humano. Sólo están activos los comandos:',
+        '- *bot* → volver al asistente virtual',
+    '- *menu1* → volver al menú estático'
+      ].join('\n'));
       return;
     }
 
-    // Comandos personalizados (si no es admin y coincide, responder)
-    const custom = botConfig.customCommands[texto];
-    if (custom) {
-      await message.reply(custom);
+    // Si el usuario manda el comando para asesor (4), activar asistente virtual (IA)
+    if (isNumericOption && texto === '4') {
+      // Limpiar buffers
+      global.userMessageBuffers[chatId] = [];
+      clearTimeout(global.userMessageTimers[chatId]);
+  // Activar IA (asistente virtual)
+      state.aiMode = true;
+      state.humanMode = false;
+      const cfg = botConfig.obtenerConfiguracion();
+      await replyWithAdvisorHint(message, [
+        '🤖 *Asistente Virtual*',
+        '━━━━━━━━━━━━━━━━━━━━━━',
+        '',
+        `Hola, soy tu asistente virtual de ${cfg.storeName || 'la tienda'}. ¿En qué puedo ayudarte?`,
+        '',
+        'Escribe tu consulta y te responderé. Si necesitas un asesor humano, vuelve a enviar *4*.'
+      ].join('\n'));
       return;
     }
 
-    // Se removió flujo de catálogo/carrito/checkout
+    // Manejo de opciones numéricas y texto libre
 
-    // Si no coincide con ningún comando, sugerir menú numérico
-    await message.reply('No te entendí. Envía 1 para ver el menú.');
-    return;
+    if (isNumericOption) {
+      // Opción 1: mostrar menú siempre, sin depender del JSON
+      if (texto === '1') {
+        const { generarTextoMenu } = require('./prints');
+        await replyWithAdvisorHint(message, generarTextoMenu());
+        return;
+      }
+      try {
+        const cfg = botConfig.obtenerConfiguracion();
+        const opts = Array.isArray(cfg.menu?.options) ? cfg.menu.options : [];
+        const found = opts.find(o => String(o.number) === texto || (o.key && String(o.key) === texto));
+
+        if (found) {
+          // Opción 4: activar asistente virtual (IA)
+          if (String(found.number) === '4') {
+            state.aiMode = true;
+            state.humanMode = false;
+            const cfg = botConfig.obtenerConfiguracion();
+            await replyWithAdvisorHint(message, [
+              '🤖 *Asistente Virtual*',
+              '━━━━━━━━━━━━━━━━━━━━━━',
+              '',
+              `Hola, soy tu asistente virtual de ${cfg.storeName || 'la tienda'}. ¿En qué puedo ayudarte?`,
+              '',
+              'Escribe tu consulta y te responderé. Si necesitas un asesor humano, vuelve a enviar *4*.'
+            ].join('\n'));
+            return;
+          }
+
+          // Si la opción tiene respuesta estática, enviar y no usar IA
+          if (found.response && String(found.response).trim()) {
+            await replyWithAdvisorHint(message, String(found.response));
+            return;
+          }
+
+          // Si la opción no tiene respuesta (vacía), derivar a asesor humano
+          state.humanMode = true;
+          console.log(`[AUDIT] ${new Date().toISOString()} - Chat ${chatId} - ENTRADA humanMode (opción sin respuesta)`);
+          await message.reply([
+            '👩‍💼 Te conectamos con un asesor',
+            '━━━━━━━━━━━━━━━━━━━━━━',
+            '',
+            'Esa opción requiere atención humana. Un asesor te atenderá en breve. 😊',
+            '',
+            'Escribe *bot* para volver al asistente o *menu1* para ver el menú.'
+          ].join('\n'));
+          return;
+        }
+      } catch (err) {
+        console.error('Error buscando opción en config.menu.options:', err);
+        // Derivar a asesor si hay error
+        state.humanMode = true;
+        console.log(`[AUDIT] ${new Date().toISOString()} - Chat ${chatId} - ENTRADA humanMode (error buscando opción)`);
+        await message.reply('Hubo un error al procesar tu solicitud; te conectamos con un asesor.');
+        return;
+      }
+
+      // Si no se encuentra la opción numérica, dar guía y derivar
+      await replyWithAdvisorHint(message, [
+        'No reconozco esa opción. 🙃',
+        '',
+        'Por favor envía *1* para ver el menú o *4* para pedir ayuda humana.',
+      ].join('\n'));
+      return;
+    }
+
+    // Mensaje libre (no numérico)
+    try {
+      const cfg = botConfig.obtenerConfiguracion();
+      const opts = Array.isArray(cfg.menu?.options) ? cfg.menu.options : [];
+      const today = new Date().toISOString().slice(0,10);
+
+      // Enviar saludo diario la primera vez que el usuario escribe en el día
+      if (!state.lastWelcomeDay || state.lastWelcomeDay !== today) {
+        state.lastWelcomeDay = today;
+        let lines = ['━━━━━━━━━━━━━━━━━━━━━━', `👋 ${cfg.menu?.greeting || `¡Hola! Somos ${cfg.storeName || 'la tienda'}.`}`, '━━━━━━━━━━━━━━━━━━━━━━', ''];
+        lines.push('Preguntas frecuentes:');
+        
+        // Opciones base obligatorias
+        const baseOptions = [
+          { number: '1', text: 'Ver este menú' },
+          { number: '4', text: 'Contactar asesor' }
+        ];
+        
+        // Unir opciones base con las del config, evitando duplicados
+        const allNumbers = opts.map(o => String(o.number));
+        const allOptions = [
+          ...baseOptions.filter(base => !allNumbers.includes(base.number)),
+          ...opts
+        ];
+        
+        // Ordenar por número
+        allOptions.sort((a, b) => Number(a.number) - Number(b.number));
+        
+        // Añadir al mensaje
+        allOptions.forEach(o => lines.push(`${o.number}. ${o.text}`));
+        lines.push('\nEnvía el número de la opción para continuar.');
+        await replyWithAdvisorHint(message, lines.join('\n'));
+        return;
+      }
+
+  // (IA inactiva en este punto) Si no está en aiMode, explicar cómo usar el menú
+
+      // Si no está en aiMode, explicar cómo usar el menú
+      await replyWithAdvisorHint(message, [
+        'No entendí eso. 🤔',
+        '',
+        'Puedes enviar *1* para ver el menú o *4* para hablar con un asesor.',
+      ].join('\n'));
+      return;
+    } catch (e) {
+      console.error('Error manejando mensaje libre:', e);
+      return;
+    }
+  return;
   } catch (error) {
     console.error('Error procesando mensaje:', error);
+    
+    try {
+      // Evitar bucles de error - guardar el último error para este chat
+      const errorTime = new Date().getTime();
+      const chatId = message?.from;
+      
+      if (chatId) {
+        const state = obtenerEstadoDelChat(chatId);
+        
+        // Evitar enviar múltiples mensajes de error al mismo chat
+        if (!state.lastErrorTime || (errorTime - state.lastErrorTime > 60000)) { // 1 minuto entre mensajes de error
+          state.lastErrorTime = errorTime;
+          state.errorCount = (state.errorCount || 0) + 1;
+          
+          // Solo enviar mensaje de error si no hay demasiados errores recientes
+          if (state.errorCount < 5) { // Máximo 5 mensajes de error por chat
+            // Derivar a asesor automáticamente en caso de error
+            state.humanMode = true;
+            console.log(`[AUDIT] ${new Date().toISOString()} - Chat ${chatId} - ENTRADA humanMode (error general)`);
+            await message.reply([
+              '👩‍💼 *CONECTANDO CON ASESOR*',
+              '',
+              'Hubo un problema procesando tu mensaje, un asesor humano te atenderá en breve.',
+              '',
+              'Escribe *bot* cuando quieras volver al asistente virtual.'
+            ].join('\n'));
+          }
+        }
+      }
+    } catch (secondaryError) {
+      console.error('Error al manejar el error original:', secondaryError);
+    }
   }
 }
 
 // Crear cliente desde el adaptador y pasar callbacks
 const client = crearClienteWhatsApp({
   clientId: 'glitch-bot',
-  onQr: (qr) => printQr(qr),
-  onReady: () => console.log('🤖 Cliente de WhatsApp listo.'),
-  onChangeState: (state) => console.log('🔄 Estado del cliente:', state),
-  onAuthenticated: () => console.log('🔐 Autenticado con éxito.'),
-  onAuthFailure: (msg) => console.error('❌ Falla de autenticación:', msg),
-  onDisconnected: (reason, cli) => {
-    console.error('🔌 Desconectado:', reason);
+  onQr: (qr) => {
+    printQr(qr);
+    whatsappStatus.updateQrCode(qr);
+  },
+  onReady: () => {
+    console.log('🤖 Cliente de WhatsApp listo.');
+    whatsappStatus.updateStatus('ready');
+    whatsappStatus.clearQrCode();
+  },
+  onChangeState: (state) => {
+    console.log('🔄 Estado del cliente:', state);
+    whatsappStatus.updateStatus(state);
+  },
+  onAuthenticated: () => {
+    console.log('🔐 Autenticado con éxito.');
+    whatsappStatus.updateStatus('authenticated');
+  },
+  onAuthFailure: (msg) => {
+    console.error('❌ Falla de autenticación:', msg);
+    whatsappStatus.updateStatus('auth_failure');
+    whatsappStatus.clearQrCode();
+    // Forzar reinicio para nuevo QR
     setTimeout(() => {
       try {
-        console.log('🔁 Reintentando inicializar cliente...');
-        cli.initialize();
-      } catch (e) {
-        console.error('Error reintentando inicializar:', e);
+        client.initialize();
+      } catch (error) {
+        console.error('Error al reinicializar tras auth_failure:', error);
       }
-    }, 3000);
+    }, 2000);
+  },
+  onDisconnected: async (reason, cli) => {
+    console.log('🔌 Desconectado:', reason);
+    whatsappStatus.updateStatus('disconnected');
+    whatsappStatus.clearQrCode();
+    // Siempre forzar reinicio para nuevo QR
+    setTimeout(() => {
+      try {
+        whatsappStatus.updateStatus('connecting');
+        cli.initialize();
+      } catch (error) {
+        console.error('Error reintentando inicializar:', error);
+        whatsappStatus.updateStatus('disconnected');
+      }
+    }, 2000);
   },
   onMessage: onMessageHandler
 });
 
+// Configurar el cliente en el servicio de estado
+whatsappStatus.setWhatsappClient(client);
+whatsappStatus.updateStatus('connecting');
+
 // Iniciar cliente y servidor web
 client.initialize();
 
-app.listen(PORT, () => {
-  console.log(`Servidor web escuchando en puerto ${PORT}`);
+const os = require('os');
+app.listen(PORT, '0.0.0.0', () => {
+  const nets = os.networkInterfaces();
+  let addresses = [];
+  for (const name of Object.keys(nets)) {
+    for (const net of nets[name]) {
+      if (net.family === 'IPv4' && !net.internal) {
+        addresses.push(net.address);
+      }
+    }
+  }
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+  console.log(`✅ Servidor web escuchando en:`);
+  addresses.forEach(ip => {
+    console.log(`   → http://${ip}:${PORT}/`);
+  });
+  console.log(`   (o http://localhost:${PORT}/ si es local)`);
+  console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+});
+
+// Iniciar el panel de administración
+iniciarPanelAdmin().catch(error => {
+  console.error('Error al iniciar el panel de administración:', error);
 });
 
 

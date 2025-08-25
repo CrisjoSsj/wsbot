@@ -1,0 +1,225 @@
+<%- include('layout', {
+  pageTitle: 'Contexto IA',
+  activeTab: 'settings',
+  username: username,
+  showMessages: true,
+  body: `
+  <style>
+    body, .container, .row, .card, .card-header, .card-body, .breadcrumb, .preview-box {
+      background: var(--bg-primary, #181c24) !important;
+      color: var(--text-primary, #f1f1f1) !important;
+    }
+    .card, .feature-card, .stat-card, .shadow, .list-group-item {
+      background: var(--card-bg, #232836) !important;
+      color: var(--text-primary, #f1f1f1) !important;
+      border: none !important;
+      box-shadow: 0 0.15rem 1.75rem 0 #10131a99 !important;
+    }
+    .card-header, .feature-card .card-header, .stat-card .card-header {
+      background: var(--bg-secondary, #232836) !important;
+      color: var(--accent-color, #25D366) !important;
+      border-bottom: 1px solid var(--border-color, #333) !important;
+    }
+    .breadcrumb {
+      background: transparent !important;
+      color: var(--text-secondary, #b0b0b0) !important;
+    }
+    .form-control, .input-group-text {
+      background: #232836 !important;
+      color: #f1f1f1 !important;
+      border: 1px solid var(--border-color, #333) !important;
+    }
+    .form-control:focus {
+      background: #232836 !important;
+      color: #fff !important;
+      border-color: var(--accent-color, #25D366) !important;
+      box-shadow: 0 0 0 0.2rem #25d36633;
+    }
+    .btn-primary, .btn-outline-primary, .btn-success, .btn-outline-success {
+      background: var(--accent-color, #25D366) !important;
+      border: none !important;
+      color: #181c24 !important;
+      font-weight: bold;
+    }
+    .btn-primary:hover, .btn-outline-primary:hover, .btn-success:hover, .btn-outline-success:hover {
+      background: var(--highlight-color, #128C7E) !important;
+      color: #fff !important;
+    }
+    .btn-outline-secondary, .btn-outline-secondary:hover {
+      background: transparent !important;
+      color: var(--accent-color, #25D366) !important;
+      border: 1px solid var(--accent-color, #25D366) !important;
+    }
+    .alert-info {
+      background: #1a232d !important;
+      color: #b3e6c7 !important;
+      border: 1px solid #25D366 !important;
+    }
+    .alert-success {
+      background: #1d2b1d !important;
+      color: #b3e6c7 !important;
+      border: 1px solid #25D366 !important;
+    }
+    .alert-danger {
+      background: #2d1a1a !important;
+      color: #ffb3b3 !important;
+      border: 1px solid #ff3b3b !important;
+    }
+    .text-primary, .text-info, .text-gray-800, .font-weight-bold, .h3, .h4, .h5, .h6 {
+      color: var(--accent-color, #25D366) !important;
+    }
+    .border-left-primary, .border-left-info, .border-left-warning {
+      border-left: 4px solid var(--accent-color, #25D366) !important;
+    }
+    .bg-primary, .bg-info, .bg-light, .bg-white {
+      background: var(--card-bg, #232836) !important;
+      color: var(--text-primary, #f1f1f1) !important;
+    }
+    .text-muted {
+      color: var(--text-secondary, #b0b0b0) !important;
+    }
+    .stat-number, .status-indicator.online {
+      color: var(--accent-color, #25D366) !important;
+    }
+    .feature-card:hover {
+      box-shadow: 0 0.5rem 1.75rem 0 #25d36633 !important;
+      border: 1px solid var(--accent-color, #25D366) !important;
+    }
+    .list-group-item.active, .list-group-item:active {
+      background: var(--accent-color, #25D366) !important;
+      color: #181c24 !important;
+      border: none !important;
+    }
+  </style>
+  <div class="row mb-4">
+    <div class="col-md-12">
+  <h1 class="h4">Contexto para la IA</h1>
+  <p style="color: #f1f1f1;">Crea y edita secciones de contexto (ej: ubicación, productos, políticas) con texto simple. La IA lo usará como referencia.</p>
+    </div>
+  </div>
+
+  <div class="row">
+    <div class="col-md-4">
+      <div class="card shadow-sm">
+        <div class="card-header">Secciones</div>
+        <div class="card-body">
+          <ul id="sectionsList" class="list-group small"></ul>
+          <button id="btnNewSection" class="btn btn-sm btn-primary mt-3 w-100">
+            <i class="bi bi-plus-lg"></i> Nueva sección
+          </button>
+        </div>
+      </div>
+    </div>
+    <div class="col-md-8">
+      <div class="card shadow-sm">
+        <div class="card-header d-flex justify-content-between align-items-center">
+          <span id="editorTitle">Editor</span>
+          <button id="btnDeleteSection" class="btn btn-sm btn-outline-danger d-none">
+            <i class="bi bi-trash"></i> Eliminar
+          </button>
+        </div>
+        <div class="card-body">
+          <div class="mb-3">
+            <label class="form-label">Nombre de sección</label>
+            <input type="text" id="sectionName" class="form-control" placeholder="ej: ubicacion">
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Contenido (texto)</label>
+            <textarea id="sectionText" class="form-control" rows="12" placeholder="Escribe aquí el contenido de la sección..."></textarea>
+            <small style="color: #b3e6c7;">No necesitas formatos especiales. Solo escribe en texto; nosotros nos encargamos del resto.</small>
+          </div>
+          <div class="d-flex gap-2">
+            <button id="btnSave" class="btn btn-success">
+              <i class="bi bi-save"></i> Guardar
+            </button>
+            <button id="btnCancel" class="btn btn-secondary">
+              Cancelar
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+  `,
+  extraScripts: `
+  <script>
+    let currentSection = null;
+
+    async function loadSections() {
+      const res = await fetch('/admin/api/context');
+      const data = await res.json();
+      const list = document.getElementById('sectionsList');
+      list.innerHTML = "";
+      const content = data.content || {};
+      const keys = Object.keys(content);
+      if (keys.length === 0) {
+        const li = document.createElement('li');
+        li.className = "list-group-item text-muted";
+        li.textContent = "No hay secciones aún";
+        list.appendChild(li);
+      } else {
+        keys.forEach(key => {
+          const li = document.createElement('li');
+          li.className = "list-group-item d-flex justify-content-between align-items-center";
+          li.innerHTML = '<span>' + key + '</span><button class="btn btn-sm btn-outline-primary">Editar</button>';
+          li.querySelector('button').addEventListener('click', () => openEditor(key, content[key]));
+          list.appendChild(li);
+        });
+      }
+    }
+
+    function openEditor(name, data) {
+      currentSection = name;
+      document.getElementById('editorTitle').textContent = 'Editando: ' + name;
+      document.getElementById('sectionName').value = name;
+      document.getElementById('sectionName').disabled = true;
+      const textValue = (typeof data === 'string')
+        ? data
+        : (data && typeof data === 'object' && typeof data.value === 'string')
+          ? data.value
+          : '';
+      document.getElementById('sectionText').value = textValue;
+      document.getElementById('btnDeleteSection').classList.remove('d-none');
+    }
+
+    function newSection() {
+      currentSection = null;
+      document.getElementById('editorTitle').textContent = 'Nueva sección';
+      document.getElementById('sectionName').value = '';
+      document.getElementById('sectionName').disabled = false;
+      document.getElementById('sectionText').value = '';
+      document.getElementById('btnDeleteSection').classList.add('d-none');
+    }
+
+    async function saveSection() {
+      const name = document.getElementById('sectionName').value.trim();
+      const sectionText = document.getElementById('sectionText').value.trim();
+      if (!name) { showAlert('warning', 'Ingresa un nombre de sección'); return; }
+      const data = { value: sectionText };
+      const res = await fetch('/admin/api/context/' + encodeURIComponent(name), {
+        method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(data)
+      });
+      const out = await res.json();
+      if (out.success) { showAlert('success', 'Guardado'); loadSections(); openEditor(name, data); }
+      else { showAlert('danger', 'Error: ' + (out.error || '')); }
+    }
+
+    async function deleteSection() {
+      if (!currentSection) return;
+      if (!confirm('¿Eliminar la sección ' + currentSection + '?')) return;
+      const res = await fetch('/admin/api/context/' + encodeURIComponent(currentSection), { method: 'DELETE' });
+      const out = await res.json();
+      if (out.success) { showAlert('success', 'Eliminada'); newSection(); loadSections(); }
+      else { showAlert('danger', 'Error: ' + (out.error || '')); }
+    }
+
+  document.addEventListener('DOMContentLoaded', () => {
+      loadSections();
+      document.getElementById('btnNewSection').addEventListener('click', newSection);
+      document.getElementById('btnSave').addEventListener('click', saveSection);
+      document.getElementById('btnCancel').addEventListener('click', newSection);
+      document.getElementById('btnDeleteSection').addEventListener('click', deleteSection);
+    });
+  </script>
+  `
+}) %>

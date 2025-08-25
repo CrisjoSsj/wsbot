@@ -1,0 +1,89 @@
+<%- include('layout', {
+    pageTitle: 'Iniciar Sesión',
+    hideNavbar: true,
+    body: `
+        <style>
+            body, .login-container, .card, .card-header, .card-body {
+                background: var(--bg-primary, #181c24) !important;
+                color: var(--text-primary, #f1f1f1) !important;
+            }
+            .card {
+                background: var(--card-bg, #232836) !important;
+                color: var(--text-primary, #f1f1f1) !important;
+                border: none;
+                box-shadow: 0 0.15rem 1.75rem 0 #10131a99;
+            }
+            .card-header {
+                background: var(--bg-secondary, #232836) !important;
+                color: var(--accent-color, #25D366) !important;
+                border-bottom: 1px solid var(--border-color, #333) !important;
+            }
+            .form-control, .input-group-text {
+                background: #232836 !important;
+                color: #f1f1f1 !important;
+                border: 1px solid var(--border-color, #333) !important;
+            }
+            .form-control:focus {
+                background: #232836 !important;
+                color: #fff !important;
+                border-color: var(--accent-color, #25D366) !important;
+                box-shadow: 0 0 0 0.2rem #25d36633;
+            }
+            .btn-primary {
+                background: var(--accent-color, #25D366) !important;
+                border: none !important;
+                color: #181c24 !important;
+                font-weight: bold;
+            }
+            .btn-primary:hover {
+                background: var(--highlight-color, #128C7E) !important;
+                color: #fff !important;
+            }
+            .alert-danger {
+                background: #2d1a1a !important;
+                color: #ffb3b3 !important;
+                border: 1px solid #ff3b3b !important;
+            }
+        </style>
+        <div class="container login-container">
+                <div class="row justify-content-center mt-5">
+                        <div class="col-md-6 col-lg-4">
+                                <div class="card shadow">
+                                        <div class="card-header text-center py-3">
+                                                <h4 class="mb-0">
+                                                        <i class="bi bi-whatsapp"></i> WsBot Admin
+                                                </h4>
+                                        </div>
+                                        <div class="card-body p-4">
+                                                <h5 class="card-title text-center mb-4">Iniciar Sesión</h5>
+                                                ${error ? `
+                                                <div class="alert alert-danger" role="alert">
+                                                        <i class="bi bi-exclamation-triangle-fill me-2"></i> ${error}
+                                                </div>
+                                                ` : ''}
+                                                <form action="/admin/login" method="post">
+                                                        <div class="mb-3">
+                                                                <label for="username" class="form-label">Usuario</label>
+                                                                <div class="input-group">
+                                                                        <span class="input-group-text"><i class="bi bi-person-fill"></i></span>
+                                                                        <input type="text" class="form-control" id="username" name="username" required autofocus>
+                                                                </div>
+                                                        </div>
+                                                        <div class="mb-4">
+                                                                <label for="password" class="form-label">Contraseña</label>
+                                                                <div class="input-group">
+                                                                        <span class="input-group-text"><i class="bi bi-key-fill"></i></span>
+                                                                        <input type="password" class="form-control" id="password" name="password" required>
+                                                                </div>
+                                                        </div>
+                                                        <button type="submit" class="btn btn-primary w-100 py-2">
+                                                                <i class="bi bi-box-arrow-in-right me-2"></i>Ingresar
+                                                        </button>
+                                                </form>
+                                        </div>
+                                </div>
+                        </div>
+                </div>
+        </div>
+    `
+}) %>

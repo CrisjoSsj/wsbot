@@ -1,115 +1,149 @@
-## Bot de WhatsApp en Glitch con whatsapp-web.js
+# Express Courier International - Bot de WhatsApp
 
-Proyecto base en Node.js con Express y `whatsapp-web.js` para un bot de tienda. Incluye:
-- Servidor HTTP (`/` y `/health`) para mantenerlo activo en Glitch
-- Saludo automático 1 vez al día por chat
-- Menú simple (horario, envío, pago, contacto, asesor)
-- Modo asesor humano (pausa respuestas del bot)
-- Administración por chat (usuario/contraseña) para cambiar textos sin tocar código
-- Disparador secreto para abrir el panel admin y gestionar comandos personalizados
-- Persistencia de configuración en `config.json` (se guarda automáticamente al editar desde admin)
+Bot de WhatsApp para servicio de mensajería automatizada de Express Courier International, con panel administrativo e integración con IA.
 
-### Requisitos
-- Node.js 18+
+## 📋 Características
 
-### Instalación local (Windows/PowerShell)
-```powershell
-cd "C:\Users\Crisjo Ssj\Downloads\bigdateros-whatsappbot-python-main\bot\bot"
+- **Servicio automatizado**: Respuestas automáticas basadas en IA para consultas comunes
+- **Panel administrativo**: Gestión completa de contenidos, opciones y configuración
+- **Integración con IA**: Utiliza Groq AI para respuestas naturales y contextuales
+- **Menú interactivo**: Navegación sencilla por opciones con números
+- **Tracking de envíos**: Consultas automatizadas de estado de paquetes
+- **Múltiples servicios**: Cotizaciones, ubicaciones, métodos de pago y más
+
+## 🚀 Instalación
+
+### Requisitos previos
+- Node.js v14 o superior
+- NPM v6 o superior
+- Cuenta de WhatsApp activa
+
+### Pasos de instalación
+
+1. **Instalar dependencias**
+```bash
 npm install
+```
+
+2. **Configurar variables de entorno**
+   - Crea un archivo `.env` en la raíz del proyecto
+   - Añade las siguientes variables:
+```
+PORT=3000
+ADMIN_PANEL_PORT=3001
+GROQ_API_KEY=tu_clave_api_de_groq
+```
+
+3. **Iniciar el bot**
+```bash
 npm start
 ```
-Escanea el QR en la consola: WhatsApp > Dispositivos vinculados > Vincular dispositivo.
 
-### Despliegue en Glitch
-1) Crea un proyecto Node.js en Glitch.  
-2) Copia los archivos de `bot/` (incluye `package.json`, `index.js`, `watch.json`).  
-3) En la consola de Glitch: `npm install` y `npm start`.  
-4) Escanea el QR que aparece en los logs.
+## 🔧 Configuración Inicial
 
-### Mantener activo con UptimeRobot
-1) Crea un monitor HTTP(s) apuntando a: `https://TU-PROYECTO.glitch.me/health`  
-2) Intervalo: cada 5 minutos.
+Al iniciar el bot por primera vez:
 
-## Uso del bot (usuario)
-- `hola` (y variantes): envía bienvenida solo una vez al día por chat.
-- `menu`: muestra el menú principal.
-- `ayuda`: guía rápida.
-- `horario`: horarios de atención.
-- `envio`: información de envíos.
-- `pago`: métodos de pago.
-- `contacto`: indica cómo hablar con un asesor.
-- `asesor`: activa modo humano (el bot deja de responder). Para volver al bot: `bot`.
+1. Escanea el código QR mostrado en consola con WhatsApp para iniciar sesión
+2. Accede al panel de administración:
+   - URL: `http://localhost:3001/admin`
+   - Usuario: `courierAdmin`
+   - Contraseña: `Courier2025@secure`
+3. Personaliza los mensajes y opciones desde el panel
 
-Notas:
-- Si el mensaje no está en el menú, el bot lo ignora (no responde).
-- El saludo solo se manda una vez al día por chat.
+## 📱 Funcionalidades
 
-## Administración por chat (oculto al usuario)
-Permite cambiar textos sin editar código. No aparece en el menú.
+### Panel Administrativo
+- **Dashboard**: Vista general del sistema
+- **Edición de contenido**: Personalizar textos informativos
+- **Configuración de menú**: Gestión de opciones interactivas
+- **Configuración de IA**: Ajuste de parámetros y contexto
+- **Control de WhatsApp**: Reconexión y gestión de sesión
 
-0) Abrir panel (disparador secreto): envía el texto configurado en `ADMIN_TRIGGER` (por defecto `panel#admin`).
+### Bot de WhatsApp
+- **Menú interactivo**: Navegación por opciones numéricas
+- **Respuestas automáticas**: Para consultas frecuentes
+- **Asistente IA**: Para consultas más complejas
+- **Derivación a asesores**: Para casos que requieren atención humana
+- **Tracking automático**: Reconoce números de seguimiento
 
-1) Iniciar sesión admin (solo por chat de WhatsApp):
+##  Tecnologías Utilizadas
+
+### Backend
+- **Node.js**: Entorno de ejecución para JavaScript en el servidor
+- **Express.js**: Framework web para crear el servidor y APIs
+- **Whatsapp-web.js**: Librería para interactuar con WhatsApp Web
+- **Groq AI**: API de inteligencia artificial para procesamiento de lenguaje natural
+- **Bcrypt**: Para encriptación de contraseñas
+- **Express-session**: Gestión de sesiones de usuario
+- **FS (File System)**: Para lectura y escritura de archivos de configuración
+- **Dotenv**: Carga de variables de entorno
+
+### Frontend
+- **EJS (Embedded JavaScript)**: Motor de plantillas para generar HTML dinámico
+- **Bootstrap 5**: Framework CSS para diseño responsivo
+- **jQuery**: Biblioteca de JavaScript para manipulación del DOM
+- **Font Awesome**: Iconos vectoriales y estilos CSS
+- **Chart.js**: Biblioteca para visualización de datos y estadísticas
+- **SweetAlert2**: Para mostrar alertas y diálogos modernos
+- **AJAX**: Para comunicación asíncrona con el servidor
+
+## �📚 Estructura del Proyecto
+
 ```
-user TU_USUARIO
-pass TU_PASSWORD
-```
-Si las credenciales son correctas, el chat entra en modo admin.
-
-2) Comandos de administración:
-```
-nombre: Nuevo nombre de tienda
-horario: Texto de horarios
-envio: Texto de envíos
-pago: Texto de métodos de pago
-config?
-logout
-cerrarsesion
-
-# Comandos personalizados
-cmd:add palabra: respuesta
-cmd:del palabra
-cmd:list
-```
-Detalles:
-- `nombre:` cambia el nombre mostrado en la bienvenida/menú.
-- `horario:` cambia la respuesta de horarios.
-- `envio:` cambia la respuesta de envíos.
-- `pago:` cambia la respuesta de pagos.
-- `config?` muestra la configuración actual.
-- `logout` o `cerrarsesion` cierra la sesión admin en ese chat.
-- `cmd:add` crea/actualiza un comando personalizado (palabra exacta en minúsculas → respuesta).
-- `cmd:del` elimina un comando personalizado por su palabra.
-- `cmd:list` lista los comandos personalizados actuales.
-
-Advertencia: estos cambios se guardan en memoria. Si el proceso se reinicia, se pierden. Puedes fijar valores por defecto con variables de entorno (abajo).
-Ahora la configuración se guarda también en `config.json`, por lo que persiste entre reinicios. Puedes cambiar la ruta con `CONFIG_PATH`.
-
-## Variables de entorno
-- `STORE_NAME`: nombre de la tienda mostrado en mensajes.  
-- `ADMIN_USER`: usuario para login admin por chat (por defecto `admin`).  
-- `ADMIN_PASS`: contraseña para login admin por chat (por defecto `1234`).
-- `ADMIN_TRIGGER`: disparador secreto para iniciar el login admin (por defecto `panel#admin`).
-- `CONFIG_PATH`: ruta del archivo de configuración persistente (por defecto `./config.json`).
-
-Ejemplo (Glitch > .env):
-```
-STORE_NAME="Mi Tienda"
-ADMIN_USER="miusuario"
-ADMIN_PASS="miclave"
+c/
+├── adapters/          # Adaptadores para servicios externos
+├── admin/             # Panel de administración
+│   ├── public/        # Archivos estáticos (CSS, JS)
+│   ├── routes/        # Rutas de la API
+│   └── views/         # Plantillas EJS
+├── config/            # Archivos de configuración
+├── data/              # Datos persistentes
+├── services/          # Servicios principales
+├── state/             # Gestión de estado
+└── utils/             # Utilidades
 ```
 
-## Endpoints HTTP
-- `/` devuelve un texto de estado simple.
-- `/health` devuelve `{ ok: true }` para monitores.
 
-## Estructura
-- `index.js`: servidor Express + cliente WhatsApp + lógica de menús y admin.
-- `package.json`: dependencias (`express`, `whatsapp-web.js`, `qrcode-terminal`, `puppeteer`).
-- `watch.json`: evita reinicios por cambios en sesión (`.wwebjs_auth`).
+### Reiniciar configuración
+Si necesitas reiniciar toda la configuración:
+1. Detén el bot
+2. Elimina la carpeta `config/whatsapp-auth/`
+3. Elimina `config/admin.json` y `config/whatsappStatus.json`
+4. Elimina `.wwebjs_cache`
+5. Reinicia el bot
 
-## Problemas comunes
-- Si cerraste sesión en el teléfono y falla la conexión, borra `.wwebjs_auth/` y arranca de nuevo para forzar nuevo QR.
-- Puppeteer descarga Chromium la primera vez (puede tardar). En Glitch se usan flags `--no-sandbox`.
+## 🛠️ Personalización
+
+### Modificar respuestas
+1. Accede al panel de administración
+2. Ve a "Editar Contexto IA" 
+3. Actualiza las respuestas para cada categoría
+
+### Cambiar opciones del menú
+1. Accede al panel de administración
+2. Ve a "Editar Menú"
+3. Añade, modifica o elimina opciones
+
+## 📈 Análisis y Métricas
+
+El bot guarda métricas sobre:
+- Consultas procesadas por la IA
+- Tasa de respuestas exitosas
+- Derivaciones a atención humana
+
+Estas métricas se pueden consultar en `data/ai-metrics.json`
+
+## Solución de Problemas
+
+### El bot no se conecta a WhatsApp
+1. Verifica tu conexión a internet
+2. Asegúrate que tu sesión de WhatsApp no esté abierta en otro dispositivo
+3. Elimina la carpeta `config/whatsapp-auth/` y vuelve a escanear el código QR
+
+### Error en el panel de administración
+1. Verifica que el puerto 3001 esté disponible
+2. Comprueba que los archivos de configuración tengan permisos de escritura
 
 
+## Licencia
+Hecho por @Crisjo
