@@ -22,7 +22,7 @@
   },
   "ai": {
     "enabled": true,
-    "groqApiKey": "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",
+    "groqApiKey": "",
     "groqModel": "llama3-8b-8192",
     "confidenceThreshold": 0.85,
     "contextLength": 5,
