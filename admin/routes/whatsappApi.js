@@ -37,6 +37,42 @@ router.post('/restart', async (req, res) => {
     }
 });
 
+// Ruta para reiniciar el cliente de WhatsApp con limpieza de sesión
+router.post('/restart-clean', async (req, res) => {
+    try {
+        console.log('[WhatsApp API] Solicitud de reinicio con limpieza de sesión recibida');
+        
+        if (!whatsappStatus.reiniciarClienteConSesionLimpia) {
+            console.error('[WhatsApp API] La función reiniciarClienteConSesionLimpia no está definida');
+            return res.status(500).json({ 
+                success: false, 
+                message: 'Función de reinicio con limpieza de sesión no disponible' 
+            });
+        }
+        
+        const result = await whatsappStatus.reiniciarClienteConSesionLimpia();
+        if (result) {
+            console.log('[WhatsApp API] Cliente de WhatsApp reiniciado con limpieza de sesión correctamente');
+            return res.json({ 
+                success: true, 
+                message: 'Cliente de WhatsApp reiniciado con limpieza de sesión correctamente' 
+            });
+        }
+        
+        console.log('[WhatsApp API] No se pudo reiniciar el cliente con limpieza');
+        return res.status(500).json({ 
+            success: false, 
+            message: 'No se pudo reiniciar el cliente de WhatsApp con limpieza de sesión' 
+        });
+    } catch (error) {
+        console.error('[WhatsApp API] Error al reiniciar el cliente con limpieza:', error);
+        return res.status(500).json({ 
+            success: false, 
+            message: 'Error al reiniciar el cliente con limpieza: ' + error.message 
+        });
+    }
+});
+
 // Ruta para obtener información de depuración de WhatsApp
 router.get('/debug', (req, res) => {
     try {

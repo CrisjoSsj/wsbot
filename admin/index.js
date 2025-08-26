@@ -523,6 +523,43 @@ router.post('/api/whatsapp/restart', isAuthenticated, (req, res) => {
   }
 });
 
+// API para reiniciar el cliente de WhatsApp con sesión limpia
+router.post('/api/whatsapp/restart-clean', isAuthenticated, async (req, res) => {
+  try {
+    console.log('Solicitando reinicio con sesión limpia...');
+    
+    // Importar función del adaptador
+    const { reiniciarClienteConSesionLimpia } = require('../adapters/whatsapp');
+    const client = whatsappStatus.getWhatsAppClient();
+    
+    if (!client) {
+      return res.status(500).json({ success: false, message: 'Cliente de WhatsApp no disponible' });
+    }
+    
+    // Reiniciar con sesión limpia
+    const result = await reiniciarClienteConSesionLimpia(client);
+    
+    if (result) {
+      return res.json({ 
+        success: true, 
+        message: 'Cliente de WhatsApp reiniciado con sesión limpia',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'No se pudo reiniciar el cliente con sesión limpia' 
+      });
+    }
+  } catch (error) {
+    console.error('Error al reiniciar el cliente con sesión limpia:', error);
+    return res.status(500).json({ 
+      error: 'Error al reiniciar con sesión limpia', 
+      details: error.message 
+    });
+  }
+});
+
 // API para cerrar sesión de WhatsApp
 router.post('/api/whatsapp/logout', isAuthenticated, async (req, res) => {
   try {

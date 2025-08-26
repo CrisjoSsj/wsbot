@@ -148,6 +148,61 @@ async function restartWhatsapp(e) {
 }
 
 /**
+ * Reinicia la conexión de WhatsApp con limpieza de sesión
+ * (Útil cuando el cierre desde teléfono deja la sesión en estado inconsistente)
+ */
+async function restartWhatsappWithCleanSession(e) {
+  if (e) e.preventDefault();
+  
+  console.log('[🧹] Iniciando proceso de reinicio con limpieza de sesión');
+  
+  if (!confirm('⚠️ ATENCIÓN: Esto eliminará todos los datos de sesión y generará un nuevo código QR.\n\n¿Está seguro que desea realizar esta acción?')) {
+    console.log('[🧹] Reinicio con limpieza cancelado por el usuario');
+    return;
+  }
+  
+  try {
+    // 1. Mostrar mensaje de espera
+    showStatusMessage('warning', 'Limpiando datos de sesión y reiniciando WhatsApp...');
+    
+    // 2. Realizar la petición al servidor
+    console.log('[🧹] Enviando petición al servidor');
+    const response = await fetch('/admin/api/whatsapp/restart-clean', {
+      method: 'POST',
+      credentials: 'same-origin'
+    });
+    
+    // 3. Analizar la respuesta
+    let data;
+    try {
+      data = await response.json();
+    } catch (parseError) {
+      console.error('[🧹] Error al parsear la respuesta JSON:', parseError);
+      data = { success: false, message: 'Formato de respuesta inválido' };
+    }
+    
+    // 4. Manejar el resultado
+    if (data && data.success) {
+      // Éxito al reiniciar con limpieza
+      showStatusMessage('success', 'Datos de sesión limpiados y conexión reiniciada. Actualizando...');
+      
+      // 5. Esperar un momento y actualizar la página
+      setTimeout(() => {
+        window.location.reload();
+      }, 3000);
+    } else {
+      // Error al reiniciar
+      const errorMsg = data && data.message ? data.message : 'Error desconocido';
+      showStatusMessage('danger', `Error al reiniciar con limpieza: ${errorMsg}`);
+    }
+  } catch (error) {
+    // Error de conexión
+    console.error('[🧹] Error de conexión:', error);
+    showStatusMessage('danger', 'Error de conexión al intentar reiniciar con limpieza');
+  }
+}
+
+/**
  * Muestra información de depuración
  */
 function showDebugInfo(e) {
@@ -235,6 +290,7 @@ function configureAllButtons() {
   const buttonSetup = [
     {id: 'btnLogoutWhatsapp', handler: logoutWhatsapp, label: 'Cerrar Sesión'},
     {id: 'btnRestartWhatsapp', handler: restartWhatsapp, label: 'Reiniciar'},
+    {id: 'btnRestartCleanWhatsapp', handler: restartWhatsappWithCleanSession, label: 'Reiniciar con limpieza'},
     {id: 'btnDebugInfo', handler: showDebugInfo, label: 'Depuración'},
     {id: 'btnRefreshStatus', handler: (e) => { 
       e.preventDefault(); 
@@ -254,7 +310,9 @@ function configureAllButtons() {
     
     if (text.includes('Cerrar Sesión')) {
       item.addEventListener('click', logoutWhatsapp);
-    } else if (text.includes('Reiniciar')) {
+    } else if (text.includes('Reiniciar con limpieza') || text.includes('Limpiar sesión')) {
+      item.addEventListener('click', restartWhatsappWithCleanSession);
+    } else if (text.includes('Reiniciar') && !text.includes('limpieza')) {
       item.addEventListener('click', restartWhatsapp);
     } else if (text.includes('Depuración') || text.includes('Debug')) {
       item.addEventListener('click', showDebugInfo);
@@ -274,6 +332,7 @@ document.addEventListener('DOMContentLoaded', function() {
     window.whatsappTools = {
       logout: logoutWhatsapp,
       restart: restartWhatsapp,
+      restartClean: restartWhatsappWithCleanSession,
       debug: showDebugInfo,
       showStatus: showStatusMessage
     };
