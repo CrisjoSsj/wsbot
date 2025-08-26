@@ -91,6 +91,11 @@ function setWhatsappClient(client) {
   writeStatus(status);
 }
 
+// Obtener la instancia del cliente de WhatsApp
+function getWhatsAppClient() {
+  return whatsappClient;
+}
+
 // Actualizar el estado de la conexión
 function updateStatus(newStatus) {
   // Validar que el estado sea uno de los valores esperados
@@ -249,8 +254,13 @@ async function logout() {
       try {
         console.log(`[${SERVICE_ID}] Reiniciando cliente después del logout...`);
         if (whatsappClient && typeof whatsappClient.initialize === 'function') {
-          whatsappClient.initialize();
-          updateStatus('connecting');
+          try {
+            whatsappClient.initialize();
+            updateStatus('connecting');
+          } catch (initErr) {
+            console.warn(`[${SERVICE_ID}] Falló initialize() tras logout (posible navegador cerrado):`, initErr.message);
+            updateStatus('disconnected');
+          }
         } else {
           console.error(`[${SERVICE_ID}] Cliente no disponible para reiniciar`);
           updateStatus('error');
@@ -323,8 +333,113 @@ function getClientInitializationStatus() {
 // Inicializar el servicio
 ensureStatusFile();
 
+// Reiniciar el cliente con limpieza de sesión
+async function reiniciarClienteConSesionLimpia() {
+  console.log(`[${SERVICE_ID}] 🧹 Iniciando reinicio con limpieza de sesión...`);
+  
+  if (!whatsappClient) {
+    console.warn(`[${SERVICE_ID}] No se puede reiniciar: cliente no disponible`);
+    return false;
+  }
+  
+  try {
+    // 1. Actualizar estado
+    updateStatus('disconnecting');
+    
+    // 2. Intentar cerrar sesión primero si el método está disponible
+    if (typeof whatsappClient.logout === 'function') {
+      console.log(`[${SERVICE_ID}] Ejecutando logout() previo a la limpieza`);
+      try {
+        await whatsappClient.logout();
+      } catch (logoutError) {
+        console.warn(`[${SERVICE_ID}] Error en logout, continuando con limpieza:`, logoutError.message);
+      }
+    }
+    
+    // 3. Destruir el cliente si el método está disponible
+    if (typeof whatsappClient.destroy === 'function') {
+      console.log(`[${SERVICE_ID}] Destruyendo cliente...`);
+      try {
+        await whatsappClient.destroy();
+      } catch (destroyError) {
+        console.warn(`[${SERVICE_ID}] Error al destruir cliente, continuando:`, destroyError.message);
+      }
+    }
+    
+    // 4. Limpiar archivos de sesión (ahora sí lo hacemos)
+    try {
+      // Ruta a la carpeta de sesión
+      const sessionFolderPath = path.join(__dirname, '../config/whatsapp-auth');
+      
+      console.log(`[${SERVICE_ID}] 🗑️ Limpiando datos de sesión en: ${sessionFolderPath}`);
+      
+      // Comprobar si la carpeta existe
+      if (fs.existsSync(sessionFolderPath)) {
+        // Usar método recursivo para eliminar la carpeta y su contenido
+        const { exec } = require('child_process');
+        
+        // En Windows usamos comando para eliminar directorios recursivamente
+        if (process.platform === 'win32') {
+          exec(`rmdir /s /q "${sessionFolderPath}"`, (error) => {
+            if (error) {
+              console.error(`[${SERVICE_ID}] Error al eliminar carpeta de sesión:`, error);
+            } else {
+              console.log(`[${SERVICE_ID}] Carpeta de sesión eliminada correctamente`);
+            }
+          });
+        } else {
+          // En Linux/Mac usamos rm -rf
+          exec(`rm -rf "${sessionFolderPath}"`, (error) => {
+            if (error) {
+              console.error(`[${SERVICE_ID}] Error al eliminar carpeta de sesión:`, error);
+            } else {
+              console.log(`[${SERVICE_ID}] Carpeta de sesión eliminada correctamente`);
+            }
+          });
+        }
+      } else {
+        console.log(`[${SERVICE_ID}] No existe carpeta de sesión para eliminar`);
+      }
+    } catch (cleanError) {
+      console.error(`[${SERVICE_ID}] Error al limpiar carpeta de sesión:`, cleanError);
+    }
+    
+    // 5. Actualizar estado y limpiar QR
+    updateStatus('disconnected');
+    clearQrCode();
+    
+    // 6. Esperar un momento y reiniciar el cliente para generar un nuevo QR
+    console.log(`[${SERVICE_ID}] Esperando 3 segundos antes de reiniciar cliente...`);
+    
+    return new Promise((resolve) => {
+      setTimeout(() => {
+        try {
+          console.log(`[${SERVICE_ID}] Reiniciando cliente después de limpieza...`);
+          if (whatsappClient && typeof whatsappClient.initialize === 'function') {
+            whatsappClient.initialize();
+            updateStatus('connecting');
+            resolve(true);
+          } else {
+            console.error(`[${SERVICE_ID}] Cliente no disponible para reiniciar`);
+            updateStatus('error');
+            resolve(false);
+          }
+        } catch (error) {
+          console.error(`[${SERVICE_ID}] Error al reiniciar cliente después de limpieza:`, error);
+          updateStatus('error');
+          resolve(false);
+        }
+      }, 3000);
+    });
+  } catch (error) {
+    console.error(`[${SERVICE_ID}] Error crítico en el reinicio con limpieza:`, error);
+    return false;
+  }
+}
+
 module.exports = {
   setWhatsappClient,
+  getWhatsAppClient,
   updateStatus,
   updateQrCode,
   getStatusInfo,
@@ -332,5 +447,6 @@ module.exports = {
   clearQrCode,
   logout,
   restartClient,
+  reiniciarClienteConSesionLimpia,  // Añadimos el nuevo método
   getClientInitializationStatus
 };

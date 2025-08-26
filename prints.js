@@ -51,13 +51,11 @@ function generarTextoMenu() {
     });
 
     const lineas = [
-      '━━━━━━━━━━━━━━━━━━━━━━',
+
       `🛍️ *${title}*`,
-      '━━━━━━━━━━━━━━━━━━━━━━',
       '',
       ...opciones,
       '',
-      '━━━━━━━━━━━━━━━━━━━━━━',
       ...footerLines
     ];
 
@@ -136,8 +134,14 @@ function generarTextoBienvenida() {
 
 // funcion para imprimir el QR de autenticación en consola
 function printQr(qr) {
-  console.log('Escanea este QR para autenticar:');
+  console.log('\n======================================');
+  console.log('📱 NUEVO CÓDIGO QR GENERADO');
+  console.log('======================================');
+  console.log('👉 Escanea este QR con WhatsApp para autenticar');
+  console.log('⏱️ Tienes aproximadamente 60 segundos antes de que cambie');
+  console.log('======================================\n');
   qrcode.generate(qr, { small: true });
+  console.log('\n======================================');
 }
 
 module.exports = {

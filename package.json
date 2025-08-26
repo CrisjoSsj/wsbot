@@ -4,7 +4,9 @@
   "description": "Bot de WhatsApp en Glitch usando whatsapp-web.js, Express y qrcode-terminal",
   "main": "index.js",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.js",
+    "clean": "node clean-session.js",
+    "fresh-start": "node clean-session.js && node index.js"
   },
   "engines": {
     "node": ">=18"

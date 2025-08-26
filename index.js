@@ -22,6 +22,14 @@ const app = express();
 const PORT = process.env.PORT || 3000;
 const IS_WINDOWS = process.platform === 'win32';
 
+// Manejadores globales para evitar que el proceso se caiga por errores no capturados
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[GLOBAL] Unhandled Rejection:', reason);
+});
+process.on('uncaughtException', (err) => {
+  console.error('[GLOBAL] Uncaught Exception:', err);
+});
+
 // Seguridad HTTP y CORS
 app.use(helmet());
 app.use(cors()); // Puedes personalizar los orígenes permitidos aquí
@@ -464,30 +472,72 @@ const client = crearClienteWhatsApp({
   onAuthFailure: (msg) => {
     console.error('❌ Falla de autenticación:', msg);
     whatsappStatus.updateStatus('auth_failure');
-    whatsappStatus.clearQrCode();
-    // Forzar reinicio para nuevo QR
+    // NO limpiamos el código QR para mantenerlo visible: whatsappStatus.clearQrCode();
+    
+    // Forzar reinicio para nuevo QR en caso necesario
     setTimeout(() => {
       try {
+        console.log('🔄 Reiniciando cliente después de falla de autenticación...');
         client.initialize();
       } catch (error) {
-        console.error('Error al reinicializar tras auth_failure:', error);
+        console.error('❌ Error al reinicializar tras auth_failure:', error);
+        // En caso de error, programar otro intento en 5 segundos
+        setTimeout(() => {
+          try {
+            console.log('🔄 Reintentando inicialización del cliente...');
+            client.initialize();
+          } catch (innerError) {
+            console.error('❌ Error en segundo intento de inicialización:', innerError);
+          }
+        }, 5000);
       }
     }, 2000);
   },
   onDisconnected: async (reason, cli) => {
     console.log('🔌 Desconectado:', reason);
     whatsappStatus.updateStatus('disconnected');
-    whatsappStatus.clearQrCode();
-    // Siempre forzar reinicio para nuevo QR
+
+    // Si la desconexión fue un logout (p.ej., desde el teléfono), ejecutar exactamente el mismo flujo
+    // que el botón de "Cerrar Sesión" del panel: whatsappStatus.logout()
+    const lowerReason = String(reason || '').toLowerCase();
+    const isLogout = reason === 'logout' || lowerReason.includes('logout') || lowerReason.includes('phone');
+    if (isLogout) {
+      try {
+        console.log('📴 Ejecutando flujo estándar de logout (equivalente al botón web)...');
+        await whatsappStatus.logout();
+      } catch (e) {
+        console.error('Error ejecutando logout estándar:', e);
+      }
+      return; // No programar reconexión manual aquí
+    }
+
+    // Para otros casos, mantener la reconexión automática
+    const reconnectTime = 3000; // 3 segundos
+    console.log(`🔄 Programando reconexión en ${reconnectTime/1000} segundos...`);
+
     setTimeout(() => {
       try {
+        console.log('🔄 Intentando reconectar a WhatsApp...');
         whatsappStatus.updateStatus('connecting');
         cli.initialize();
       } catch (error) {
-        console.error('Error reintentando inicializar:', error);
-        whatsappStatus.updateStatus('disconnected');
+        console.error('❌ Error reintentando inicializar:', error);
+        whatsappStatus.updateStatus('error');
+
+        // Si falla, programar otro intento en 5 segundos
+        console.log('🔄 Programando nuevo intento en 5 segundos...');
+        setTimeout(() => {
+          try {
+            console.log('🔄 Reintentando inicialización...');
+            whatsappStatus.updateStatus('connecting');
+            cli.initialize();
+          } catch (innerError) {
+            console.error('❌ Error en segundo intento:', innerError);
+            whatsappStatus.updateStatus('error');
+          }
+        }, 5000);
       }
-    }, 2000);
+    }, reconnectTime);
   },
   onMessage: onMessageHandler
 });

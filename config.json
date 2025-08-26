@@ -10,19 +10,10 @@
     "tramites": "Documentos necesarios: Identificación válida, factura de compra. Impuestos: calculados según valor declarado + flete (aproximadamente 15-25%). Tiempo de trámite aduanal: 1-3 días hábiles adicionales al tiempo de tránsito.",
     "contacto": "Tel: +1 (555) 123-4567. Email: info@expresscourier.demo. WhatsApp: el número desde donde nos escribes. Instagram: @ExpressCourier."
   },
-  "customCommands": {
-    "tracking": {
-      "pattern": "(tracking|seguimiento|rastrear|rastreo).*([A-Z0-9]{6,15})",
-      "response": "Estoy verificando el estado de tu envío con número {match2}. Para obtener la información actualizada, un asesor te contactará pronto. Envía *4* si necesitas asistencia inmediata."
-    },
-    "cotizar": {
-      "pattern": "(cotiz|presupuesto).*([0-9]+).*kilo",
-      "response": "Para un envío de aproximadamente {match2} kilos, la tarifa estimada sería: {match2 <= 1 ? '$15 USD' : match2 <= 5 ? '$25 USD' : match2 <= 10 ? '$40 USD' : 'requiere cotización personalizada'}. Para confirmar el precio exacto, envía *4* para hablar con un asesor."
-    }
-  },
+
   "ai": {
     "enabled": true,
-    "groqApiKey": "",
+    "groqApiKey": "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",
     "groqModel": "llama3-8b-8192",
     "confidenceThreshold": 0.85,
     "contextLength": 5,

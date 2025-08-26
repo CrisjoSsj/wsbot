@@ -49,32 +49,7 @@ function initializeGroq() {
  * @returns {string} - Prompt del sistema personalizado
  */
 function generateSystemPrompt(businessContext, userIntent = null) {
-  const { name, description, content, ai } = businessContext;
-  
-  // Determinar estrategia de respuesta según intención
-  let strategySection = '';
-  if (userIntent) {
-    if (userIntent.type === 'buying' && userIntent.buyingInterest > 0.5) {
-      strategySection = `
-ESTRATEGIA COMERCIAL ACTIVA (Cliente con intención de compra detectada):
-• 🎯 GENERA EXPECTATIVA antes de derivar al asesor
-• 💫 Menciona brevemente lo atractivo de las camisetas
-• 🏃‍♂️ Crea sensación de oportunidad
-• 📞 Deriva con mensaje específico para ventas`;
-    } else if (userIntent.type === 'info') {
-      strategySection = `
-ESTRATEGIA INFORMATIVA (Cliente busca info rápida):
-• ⚡ Respuesta directa y concisa
-• 📋 Solo la información solicitada
-• 🤝 Si falta detalle, ofrece derivar con *4*`;
-    } else if (userIntent.isFirstTime) {
-      strategySection = `
-ESTRATEGIA DE BIENVENIDA (Cliente nuevo):
-• 🤗 Tono más acogedor y explicativo
-• 🏪 Incluir breve presentación del negocio
-• 🗺️ Orientar brevemente cómo obtener ayuda (puede enviar *4*)`;
-    }
-  }
+  const { storeName, businessDescription, content, ai } = businessContext;
   
   // Construir un resumen dinámico del contenido personalizado
   const custom = content && typeof content === 'object' ? content : {};
@@ -104,45 +79,17 @@ ESTRATEGIA DE BIENVENIDA (Cliente nuevo):
     ? Object.entries(custom).map(([k, v]) => `• ${k}: ${summarize(v)}`).join('\n')
     : '• (Sin contenido personalizado)';
 
-  return `Eres un asistente súper amigable de "${name || 'nuestra tienda'}" - ${description || 'tienda de camisetas'}.
-${strategySection}
+  // Usar EXCLUSIVAMENTE las instrucciones del archivo JSON
+  return `${ai?.instructions || 'Eres un asistente virtual. Responde de manera directa y concisa usando solo la información proporcionada.'}
 
-INFORMACIÓN BÁSICA:
-• Nombre de la tienda: ${name || 'Tienda Ssj'}
-• Tipo de negocio: ${description || 'tienda de camisetas'}
+INFORMACIÓN CONTEXTUAL:
+• Nombre: ${storeName || 'Tienda'}
+• Tipo de negocio: ${businessDescription || 'Negocio'}
 
-CONTEXTO PERSONALIZADO (desde configuración):
+CONTENIDO DISPONIBLE:
 ${customEntries}
 
-ESTILO DE COMUNICACIÓN:
-${ai?.instructions || 'Responde de manera amigable, directa y profesional'}
-
-REGLAS CRÍTICAS:
-1. 🚫 NUNCA uses "Entiendo", "Comprendo", "Claro", "Por supuesto"
-2. ⚡ MÁXIMO 2-3 líneas por respuesta - sé súper conciso
-3. 😊 Habla como un amigo cercano, no como robot formal
-4. 🎯 Ve directo al punto con calidez humana
-5. Si no sabes algo específico o falta contexto, sugiere amablemente enviar *4* (asesor humano)
-6. 🎈 Usa 1-2 emojis que aporten, no decoren
-7. 🚫 SOLO puedes responder usando la información de este contexto. Si la respuesta no está aquí, responde exactamente: "No tengo esa información, por favor envía *4* para hablar con un asesor humano." No inventes respuestas ni respondas temas fuera de la tienda.
-
-EJEMPLOS DE RESPUESTAS PERFECTAS:
-
-Para nombre de tienda:
-❌ MAL: "Nuestra empresa se denomina..."
-✅ BIEN: "Somos ${name || 'Tienda Ssj'} 👕"
-
-Para horarios:
-❌ MAL: "Te informo que nuestros horarios de atención son..."
-✅ BIEN: "🕒 Estamos abiertos todos los días de 9:00 a 18:00"
-
-Para interés en productos:
-❌ MAL: "Tenemos varios productos disponibles, te recomiendo que contactes..."
-✅ BIEN: "¡Qué bueno que te gusten nuestras camisetas! 👕 Envía *4* para ver todos los modelos disponibles 😊"
-
-Para consultas complejas o fuera de contexto:
-❌ MAL: "No tengo esa información específica en este momento, pero puedes..."
-✅ BIEN: "No tengo esa información, por favor envía *4* para hablar con un asesor humano."
+Si la información solicitada no está en este contexto, responde: "No tengo esa información, por favor envía *4* para hablar con un asesor humano."
 `;
 }
 
@@ -283,11 +230,13 @@ function analyzeConfidence(response, userMessage) {
 
   // BONIFICACIONES pequeñas y penalizaciones
   if (intent.type === 'buying' && intent.buyingInterest > 0.5) {
-    if (lowerResponse.includes('catálogo') || lowerResponse.includes('camisetas') || lowerResponse.includes('modelos')) {
+    if (lowerResponse.includes('catálogo') || lowerResponse.includes('productos') || lowerResponse.includes('modelos')) {
       confidence += 0.08;
     }
   }
 
+  // Ya no penalizamos mucho los inicios de respuesta para permitir
+  // que el modelo siga las instrucciones del JSON
   const badStarters = [
     'entiendo', 'comprendo', 'claro', 'por supuesto', 'perfecto',
     'muy bien', 'excelente', 'desde luego', 'efectivamente', 'correcto',
@@ -296,7 +245,7 @@ function analyzeConfidence(response, userMessage) {
   const firstWords = lowerResponse.split(' ').slice(0, 3).join(' ');
   badStarters.forEach(starter => {
     if (firstWords.includes(starter)) {
-      confidence -= 0.35;
+      confidence -= 0.15; // Penalización reducida
     }
   });
 
@@ -459,34 +408,8 @@ function cleanResponse(response) {
 
   let cleaned = response.trim();
   
-  // Eliminar frases robóticas y formales al inicio
-  const roboticStarters = [
-    /^¡?hola!?\s+/i,
-    /^entiendo que\s+/i,
-    /^entiendo[,.]?\s+/i,
-    /^comprendo que\s+/i,
-    /^comprendo[,.]?\s+/i,
-    /^claro que\s+/i,
-    /^claro[,.]?\s+/i,
-    /^por supuesto que\s+/i,
-    /^por supuesto[,!.]?\s+/i,
-    /^desde luego[,.]?\s+/i,
-    /^efectivamente[,.]?\s+/i,
-    /^sin duda[,.]?\s+/i,
-    /^ciertamente[,.]?\s+/i,
-    /^te informo que\s+/i,
-    /^me complace informarte que\s+/i,
-    /^permíteme decirte que\s+/i,
-    /^déjame decirte que\s+/i,
-    /^con gusto te informo que\s+/i
-  ];
-  
-  // Aplicar limpieza de frases robóticas
-  roboticStarters.forEach(pattern => {
-    cleaned = cleaned.replace(pattern, '');
-  });
-  
-  // Eliminar conectores innecesarios que hacen respuestas largas
+  // Realizar una limpieza mínima para permitir que el modelo siga las instrucciones del JSON
+  // Eliminamos solo algunos conectores verbosos innecesarios
   const verboseConnectors = [
     /^en relación a tu consulta[,.]?\s+/i,
     /^respecto a tu pregunta[,.]?\s+/i,
@@ -510,21 +433,6 @@ function cleanResponse(response) {
   
   // Eliminar espacios múltiples
   cleaned = cleaned.replace(/\s+/g, ' ').trim();
-  
-  // Si la respuesta quedó muy corta, agregar emoji contextual
-  if (cleaned.length > 5 && cleaned.length < 15) {
-    if (response.toLowerCase().includes('horario')) {
-      cleaned = '🕒 ' + cleaned;
-    } else if (response.toLowerCase().includes('envío') || response.toLowerCase().includes('envio')) {
-      cleaned = '📦 ' + cleaned;
-    } else if (response.toLowerCase().includes('pago')) {
-      cleaned = '💳 ' + cleaned;
-    } else if (response.toLowerCase().includes('ubicac') || response.toLowerCase().includes('direcc')) {
-      cleaned = '📍 ' + cleaned;
-    } else if (response.toLowerCase().includes('camiseta') || response.toLowerCase().includes('producto')) {
-      cleaned = '👕 ' + cleaned;
-    }
-  }
   
   return cleaned || response; // Si todo falla, devolver la original
 }
@@ -562,7 +470,7 @@ async function processMessageWithAI(chatId, message, state) {
       .map(m => `${m.isBot ? 'Asistente' : 'Cliente'}: ${m.text}`)
       .join('\n');
 
-    // Generar el prompt del sistema con intención
+    // Generar el prompt del sistema con intención utilizando la estructura correcta del JSON
     const systemPrompt = generateSystemPrompt(botSettings, userIntent);
     
     // Construir el prompt completo
@@ -733,14 +641,6 @@ function getConfig() {
 }
 
 /**
- * Verifica si Gemini AI está disponible
- * @returns {boolean} - True si está disponible
- */
-function isGeminiAvailable() {
-  return model !== null;
-}
-
-/**
  * Verifica si Groq está disponible
  * @returns {boolean} - True si Groq está inicializado
  */
@@ -772,7 +672,6 @@ module.exports = {
   processMessageWithAI,
   updateConfig,
   getConfig,
-  isGroqAvailable,
   getAIStats,
   initializeGroq,
   detectUserIntent,
