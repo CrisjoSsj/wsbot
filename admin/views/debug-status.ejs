@@ -98,6 +98,9 @@
                         <button class="btn btn-primary" onclick="forceRefresh()">
                             <i class="bi bi-arrow-repeat"></i> Actualizar Estado
                         </button>
+                        <button class="btn btn-info" onclick="forceQrRegeneration()">
+                            <i class="bi bi-qr-code"></i> Regenerar QR
+                        </button>
                         <button class="btn btn-warning" onclick="restartWhatsapp()">
                             <i class="bi bi-arrow-clockwise"></i> Reiniciar Cliente
                         </button>
@@ -190,6 +193,27 @@
                                 setTimeout(checkStatus, 2000);
                             } else {
                                 showError(data.message || 'Error al cerrar sesión');
+                            }
+                        });
+                } catch (error) {
+                    showError('Error: ' + error.message);
+                }
+            }
+        }
+        
+        // Función para forzar regeneración del código QR
+        async function forceQrRegeneration() {
+            if (confirm('¿Está seguro que desea regenerar el código QR? Se cerrará la sesión actual.')) {
+                try {
+                    showMessage('Regenerando código QR...');
+                    await fetch('/admin/api/whatsapp/force-qr', { method: 'POST' })
+                        .then(response => response.json())
+                        .then(data => {
+                            if (data.success) {
+                                showMessage('Regeneración de QR iniciada. Debería aparecer un nuevo código en breve.');
+                                setTimeout(checkStatus, 2000);
+                            } else {
+                                showError(data.message || 'Error al regenerar el código QR');
                             }
                         });
                 } catch (error) {

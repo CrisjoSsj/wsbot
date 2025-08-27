@@ -1,5 +1,15 @@
 {
   "storeName": "Express Courier International",
+  "ai": {
+    "groqApiKey": "",
+    "enabled": true,
+    "groqModel": "llama3-8b-8192",
+    "confidenceThreshold": 0.85,
+    "contextLength": 5,
+    "timeout": 10000,
+    "maxTokens": 1000,
+    "instructions": "Eres un asistente amigable y profesional de Express Courier (servicio de courier internacional). Sé conciso: 2-3 líneas. NO saludes con 'hola' en cada respuesta a menos que sea el primer contacto. Evita muletillas como 'entiendo', 'comprendo', 'claro'. Usa 0-2 emojis naturales. Responde directo y útil. Si piden cotizaciones personalizadas, tracking específico o resolver casos particulares, siempre sugiere enviar *4* para hablar con un asesor. Para dudas sobre tarifas estándar, horarios u oficinas, responde directo con la información. SOLO puedes responder usando la información de este contexto. Si la respuesta no está aquí, responde exactamente: 'No tengo esa información, por favor envía *4* para hablar con un asesor humano.' No inventes respuestas ni respondas temas fuera del servicio de courier."
+  },
   "content": {
     "horario": "Lunes a viernes: 8:00 AM - 7:00 PM. Sábados: 9:00 AM - 3:00 PM. Domingos: Cerrado.",
     "tarifas": "Tarifas por peso: 0-1 kg: $15 USD, 1-5 kg: $25 USD, 5-10 kg: $40 USD, +10 kg: consultar cotización personalizada. Tarifa de casillero mensual: $10 USD.",
@@ -9,17 +19,6 @@
     "servicios": "Casillero internacional (dirección permanente en Miami, NY y China). Compra asistida. Consolidación de paquetes. Trámites aduanales. Reempaque y protección especial. Seguro de envíos hasta $2,000 USD.",
     "tramites": "Documentos necesarios: Identificación válida, factura de compra. Impuestos: calculados según valor declarado + flete (aproximadamente 15-25%). Tiempo de trámite aduanal: 1-3 días hábiles adicionales al tiempo de tránsito.",
     "contacto": "Tel: +1 (555) 123-4567. Email: info@expresscourier.demo. WhatsApp: el número desde donde nos escribes. Instagram: @ExpressCourier."
-  },
-
-  "ai": {
-    "enabled": true,
-    "groqApiKey": "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",
-    "groqModel": "llama3-8b-8192",
-    "confidenceThreshold": 0.85,
-    "contextLength": 5,
-    "timeout": 10000,
-    "maxTokens": 1000,
-    "instructions": "Eres un asistente amigable y profesional de Express Courier (servicio de courier internacional). Sé conciso: 2-3 líneas. NO saludes con 'hola' en cada respuesta a menos que sea el primer contacto. Evita muletillas como 'entiendo', 'comprendo', 'claro'. Usa 0-2 emojis naturales. Responde directo y útil. Si piden cotizaciones personalizadas, tracking específico o resolver casos particulares, siempre sugiere enviar *4* para hablar con un asesor. Para dudas sobre tarifas estándar, horarios u oficinas, responde directo con la información. SOLO puedes responder usando la información de este contexto. Si la respuesta no está aquí, responde exactamente: 'No tengo esa información, por favor envía *4* para hablar con un asesor humano.' No inventes respuestas ni respondas temas fuera del servicio de courier."
   },
   "businessDescription": "servicio de courier internacional",
   "menu": {

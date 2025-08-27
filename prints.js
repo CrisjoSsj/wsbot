@@ -29,7 +29,10 @@ function generarTextoMenu() {
         ...baseOptions.filter(base => !allNumbers.includes(base.number)),
         ...configOptions
       ];
-      options = mergedOptions;
+      // Ordenar opciones por número
+      options = mergedOptions.sort((a, b) => {
+        return parseInt(a.number) - parseInt(b.number);
+      });
       if (typeof config.menu.footer === 'string' && config.menu.footer.trim()) {
         footerLines = [config.menu.footer.trim()];
       }

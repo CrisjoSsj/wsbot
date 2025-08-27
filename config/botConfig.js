@@ -11,9 +11,7 @@ const STORE_NAME = process.env.STORE_NAME || 'Tienda Demo';
 
 // Valores predeterminados para la configuración del bot
 const DEFAULT_CONFIG = {
-  storeName: STORE_NAME,
-  content: {},
-  customCommands: {}
+  storeName: STORE_NAME
 };
 
 // funcion para mantener la configuración editable del bot
@@ -60,42 +58,11 @@ function cargarConfigDesdeDisco() {
       const data = JSON.parse(raw);
       
       if (data && typeof data === 'object') {
-        // Manejar compatibilidad con formato anterior
-        if (data.horarioText || data.envioText || data.pagoText || 
-            data.direccionesText || data.preciosText || data.contactoText) {
-          
-          // Convertir formato antiguo al nuevo formato
-          const nuevoFormato = {
-            storeName: data.storeName || botConfig.storeName,
-            content: {
-              horario: {
-                sections: [{title: "Horario", content: data.horarioText || ""}]
-              },
-              envio: {
-                sections: [{title: "Envíos", content: data.envioText || ""}]
-              },
-              pago: {
-                methods: [{name: "Métodos de pago", details: data.pagoText || ""}]
-              },
-              direcciones: {
-                locations: [{name: "Ubicación", details: [data.direccionesText || ""]}]
-              },
-              precios: {
-                message: data.preciosText || ""
-              },
-              contacto: {
-                methods: [{type: "Contacto", value: data.contactoText || ""}]
-              }
-            },
-            customCommands: data.customCommands || {}
-          };
-          
-          // Fusionar con la configuración actual
-          Object.assign(botConfig, mergeDeep(botConfig, nuevoFormato));
-        } else {
-          // Formato nuevo, fusionar directamente
-          Object.assign(botConfig, mergeDeep(botConfig, data));
-        }
+        // Formato simplificado, fusionar directamente
+        Object.assign(botConfig, mergeDeep(botConfig, data));
+        
+        // Eliminar datos obsoletos
+        sanitizeConfig(botConfig);
         
         console.log('⚙️ Configuración cargada desde disco.');
       }
@@ -116,6 +83,10 @@ function sanitizeConfig(cfg) {
       if (cfg.menu.welcome) delete cfg.menu.welcome;
       if (cfg.menu.admin) delete cfg.menu.admin;
     }
+
+    // Eliminar objetos obsoletos (pero mantener el content actual)
+    // Ya no eliminar el content ya que ahora se usa para el contexto de IA
+    if (cfg.customCommands) delete cfg.customCommands;
 
     // Eliminar textos legacy de nivel superior si existen
     const legacyTextKeys = ['horarioText','envioText','pagoText','direccionesText','preciosText','contactoText'];

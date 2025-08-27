@@ -133,6 +133,43 @@ El bot guarda métricas sobre:
 
 Estas métricas se pueden consultar en `data/ai-metrics.json`
 
+## ⚙️ Optimizaciones de Rendimiento
+
+### Optimizaciones implementadas
+La aplicación ha sido optimizada para funcionar en entornos de recursos limitados:
+
+- **Eliminación de servicios no utilizados**:
+  - Servicio de imágenes (`imagenes.service.js`)
+  - Servicio de contenido estático (`contenido.service.js`)
+  - Servicio de comandos personalizados (`comandosPersonalizados.service.js`)
+
+- **Reducción de dependencias**:
+  - Eliminación de la librería Jimp y sus dependencias
+  - Eliminación de configuraciones y estructuras de datos obsoletas
+
+- **Optimización de navegador Puppeteer**:
+  - Configuración para minimizar consumo de memoria
+  - Implementación de modo de proceso único para reducir huella de memoria
+  - Configuración de viewport más pequeño para ahorrar recursos
+
+- **Gestión de memoria**:
+  - Sistema de monitoreo y gestión de memoria (`memory-management.js`)
+  - Recolección de basura periódica para liberar recursos
+  - Detección automática de memoria baja
+
+### Requisitos mínimos
+
+Después de las optimizaciones, los requisitos mínimos son:
+- 1 GB de RAM
+- 1 núcleo de CPU
+- 2 GB de espacio en disco
+- Sistema operativo Linux o Windows Server
+
+Para mejorar el rendimiento, ejecuta el bot con:
+```bash
+node --expose-gc --max-old-space-size=768 index.js
+```
+
 ## Solución de Problemas
 
 ### El bot no se conecta a WhatsApp

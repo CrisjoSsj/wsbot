@@ -37,38 +37,46 @@ router.post('/restart', async (req, res) => {
     }
 });
 
-// Ruta para reiniciar el cliente de WhatsApp con limpieza de sesión
-router.post('/restart-clean', async (req, res) => {
+// La ruta para reiniciar el cliente de WhatsApp con limpieza de sesión ha sido eliminada
+// para optimizar el rendimiento en sistemas con recursos limitados
+
+// Ruta para forzar regeneración de QR (útil cuando el QR se queda congelado)
+router.post('/force-qr', async (req, res) => {
     try {
-        console.log('[WhatsApp API] Solicitud de reinicio con limpieza de sesión recibida');
+        console.log('[WhatsApp API] Solicitud para forzar regeneración de QR');
         
-        if (!whatsappStatus.reiniciarClienteConSesionLimpia) {
-            console.error('[WhatsApp API] La función reiniciarClienteConSesionLimpia no está definida');
+        // Obtener el cliente actual
+        const client = whatsappStatus.getWhatsAppClient();
+        
+        if (!client) {
+            console.error('[WhatsApp API] No hay cliente disponible para forzar regeneración de QR');
             return res.status(500).json({ 
                 success: false, 
-                message: 'Función de reinicio con limpieza de sesión no disponible' 
+                message: 'No hay cliente de WhatsApp disponible' 
             });
         }
         
-        const result = await whatsappStatus.reiniciarClienteConSesionLimpia();
+        // Reiniciar el cliente para forzar un nuevo QR
+        const result = await whatsappStatus.logout();
+        
         if (result) {
-            console.log('[WhatsApp API] Cliente de WhatsApp reiniciado con limpieza de sesión correctamente');
+            console.log('[WhatsApp API] Regeneración de QR forzada correctamente');
             return res.json({ 
                 success: true, 
-                message: 'Cliente de WhatsApp reiniciado con limpieza de sesión correctamente' 
+                message: 'Regeneración de QR forzada correctamente. Espere unos segundos para que aparezca el nuevo QR.' 
             });
         }
         
-        console.log('[WhatsApp API] No se pudo reiniciar el cliente con limpieza');
+        console.log('[WhatsApp API] No se pudo forzar la regeneración del QR');
         return res.status(500).json({ 
             success: false, 
-            message: 'No se pudo reiniciar el cliente de WhatsApp con limpieza de sesión' 
+            message: 'No se pudo forzar la regeneración del QR' 
         });
     } catch (error) {
-        console.error('[WhatsApp API] Error al reiniciar el cliente con limpieza:', error);
+        console.error('[WhatsApp API] Error al forzar regeneración de QR:', error);
         return res.status(500).json({ 
             success: false, 
-            message: 'Error al reiniciar el cliente con limpieza: ' + error.message 
+            message: 'Error al forzar regeneración de QR: ' + error.message 
         });
     }
 });

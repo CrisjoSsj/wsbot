@@ -506,6 +506,47 @@ router.get('/api/whatsapp/qr', isAuthenticated, (req, res) => {
   }
 });
 
+// API para forzar regeneración de código QR
+router.post('/api/whatsapp/force-qr', isAuthenticated, (req, res) => {
+  try {
+    console.log('Forzando regeneración de código QR por solicitud del admin...');
+    
+    const client = whatsappStatus.getWhatsAppClient();
+    
+    if (!client) {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'Cliente de WhatsApp no disponible' 
+      });
+    }
+    
+    // Limpiar el QR actual para evitar confusión
+    whatsappStatus.clearQrCode();
+    
+    // Reiniciar el cliente para forzar regeneración de QR
+    const result = whatsappStatus.restartClient();
+    
+    if (result) {
+      return res.json({ 
+        success: true, 
+        message: 'Se ha iniciado la regeneración del código QR',
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      return res.status(500).json({ 
+        success: false, 
+        message: 'No se pudo forzar la regeneración del código QR' 
+      });
+    }
+  } catch (error) {
+    console.error('Error al forzar regeneración del código QR:', error);
+    return res.status(500).json({ 
+      error: 'Error al forzar regeneración del código QR', 
+      details: error.message 
+    });
+  }
+});
+
 // API para reiniciar el cliente de WhatsApp
 router.post('/api/whatsapp/restart', isAuthenticated, (req, res) => {
   try {

@@ -1,16 +1,5 @@
-// Script para depurar el estado   // Actualizar el estado en la interfaz
-  let html = '<div class="card">' +
-    '<div class="card-body">' +
-      '<h5 class="card-title">Estado de WhatsApp</h5>' +
-      '<p class="card-text">' +
-        '<strong>Estado:</strong> <span class="badge ' + getStatusBadgeClass(statusData.status) + '">' + getStatusLabel(statusData.status) + '</span><br>' +
-        '<strong>Actualizado:</strong> ' + new Date(statusData.lastUpdate).toLocaleString() + '<br>' +
-        '<strong>Cliente inicializado:</strong> ' + (statusData.clientInitialized ? 'Sí' : 'No') + '<br>' +
-      '</p>' +
-      '<button class="btn btn-primary" onclick="forceRefresh()">Actualizar</button>' +
-      '<button class="btn btn-warning ms-2" onclick="restartWhatsapp()">Reiniciar Cliente</button>' +
-    '</div>' +
-  '</div>';nsole.log('=== Depurador de Estado de WhatsApp ===');
+// Script para depurar el estado de WhatsApp
+console.log('=== Depurador de Estado de WhatsApp ===');
 
 // Función para mostrar el estado actual en la consola
 async function checkStatus() {
@@ -112,6 +101,27 @@ async function restartWhatsapp() {
   }
 }
 
+// Forzar regeneración del código QR
+async function forceQrRegeneration() {
+  if (confirm('¿Está seguro que desea forzar la regeneración del código QR?')) {
+    try {
+      showMessage('Forzando regeneración de código QR...');
+      await fetch('/admin/api/whatsapp/force-qr', { method: 'POST' })
+        .then(response => response.json())
+        .then(data => {
+          if (data.success) {
+            showMessage('Regeneración de QR iniciada. Debería aparecer un nuevo código en breve.');
+            setTimeout(checkStatus, 5000); // Esperar un poco más para que se genere el QR
+          } else {
+            showError(data.message || 'Error al regenerar el código QR');
+          }
+        });
+    } catch (error) {
+      showError('Error: ' + error.message);
+    }
+  }
+}
+
 // Mostrar mensaje en la interfaz
 function showMessage(message) {
   const messages = document.getElementById('messages');
@@ -145,6 +155,6 @@ document.addEventListener('DOMContentLoaded', function() {
   console.log('Comprobando estado inicial...');
   checkStatus();
   
-  // Actualizar cada 5 segundos
-  setInterval(checkStatus, 5000);
+  // Actualizar cada 30 segundos (optimizado para reducir carga en servidor)
+  setInterval(checkStatus, 30000);
 });

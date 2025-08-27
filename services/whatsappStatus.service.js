@@ -98,6 +98,99 @@ function getWhatsAppClient() {
 
 // Actualizar el estado de la conexión
 function updateStatus(newStatus) {
+  // Estado UNPAIRED es un caso especial (desvinculado)
+  if (newStatus === 'UNPAIRED') {
+    console.log(`[${SERVICE_ID}] 📵 Detectado estado UNPAIRED (dispositivo desvinculado)`);
+    
+    // Registrar evento específico para seguimiento del error
+    console.log(`[${SERVICE_ID}] 📊 EVENTO CRÍTICO: Estado UNPAIRED detectado a las ${new Date().toLocaleString()}`);
+    
+    try {
+      // Guardar información sobre el evento en un archivo de registro especial
+      const logData = {
+        timestamp: new Date().toISOString(),
+        event: 'UNPAIRED_STATE_DETECTED',
+        description: 'El dispositivo se ha desvinculado de WhatsApp Web',
+        action: 'Se procederá a limpiar la sesión y forzar regeneración del QR',
+        clientInfo: whatsappClient ? {
+          hasState: !!whatsappClient.state,
+          state: whatsappClient.state || 'unknown',
+          hasInfo: !!whatsappClient.info
+        } : 'no_client'
+      };
+      
+      try {
+        const logFilePath = path.join(__dirname, '../logs/whatsapp-critical-events.json');
+        const logDir = path.dirname(logFilePath);
+        
+        // Crear directorio de logs si no existe
+        if (!fs.existsSync(logDir)) {
+          fs.mkdirSync(logDir, { recursive: true });
+        }
+        
+        // Leer log actual si existe o crear nuevo
+        let logs = [];
+        if (fs.existsSync(logFilePath)) {
+          logs = JSON.parse(fs.readFileSync(logFilePath, 'utf8'));
+        }
+        
+        // Agregar nuevo evento y guardar
+        logs.push(logData);
+        fs.writeFileSync(logFilePath, JSON.stringify(logs, null, 2));
+      } catch (logError) {
+        console.error(`[${SERVICE_ID}] Error al registrar evento crítico:`, logError.message);
+      }
+      
+      // En caso de UNPAIRED, usar auth_failure para reiniciar correctamente
+      newStatus = 'auth_failure';
+      
+      // Limpiar el código QR actual y forzar regeneración
+      clearQrCode();
+      console.log(`[${SERVICE_ID}] 🧹 QR limpiado debido a estado UNPAIRED`);
+      
+      // Iniciar limpieza completa de sesión en lugar de simple reinicio
+      setTimeout(() => {
+        try {
+          reiniciarClienteConSesionLimpia().then(result => {
+            console.log(`[${SERVICE_ID}] 🔄 Reinicio completo con resultado: ${result ? 'exitoso' : 'fallido'}`);
+          });
+        } catch (e) {
+          console.error(`[${SERVICE_ID}] Error al programar reinicio completo tras UNPAIRED:`, e.message);
+        }
+      }, 1000);
+      
+    } catch (err) {
+      console.error(`[${SERVICE_ID}] Error manejando estado UNPAIRED:`, err.message);
+    }
+  }
+  
+  // Manejar caso especial de errores de RegistrationUtils (reportados en estado)
+  if (typeof newStatus === 'string' && newStatus.toLowerCase().includes('registrationutils')) {
+    console.log(`[${SERVICE_ID}] ⚠️ Detectado error de RegistrationUtils en estado`);
+    
+    // Tratar como fallo de autenticación para reiniciar correctamente
+    newStatus = 'auth_failure';
+    
+    // También limpiar QR y forzar sesión limpia
+    try {
+      clearQrCode();
+      console.log(`[${SERVICE_ID}] 🧹 QR limpiado debido a error de RegistrationUtils`);
+      
+      // Programar reinicio completo tras un breve retraso
+      setTimeout(() => {
+        try {
+          reiniciarClienteConSesionLimpia().then(result => {
+            console.log(`[${SERVICE_ID}] 🔄 Reinicio completo con resultado: ${result ? 'exitoso' : 'fallido'}`);
+          });
+        } catch (e) {
+          console.error(`[${SERVICE_ID}] Error al programar reinicio completo:`, e.message);
+        }
+      }, 1000);
+    } catch (err) {
+      console.error(`[${SERVICE_ID}] Error manejando error de RegistrationUtils:`, err.message);
+    }
+  }
+  
   // Validar que el estado sea uno de los valores esperados
   const validStates = ['disconnected', 'connecting', 'authenticated', 'ready', 'auth_failure'];
   if (!validStates.includes(newStatus)) {
@@ -140,21 +233,34 @@ function updateStatus(newStatus) {
 // Actualizar el código QR
 function updateQrCode(qrCode) {
   if (!qrCode) {
-    // QR nulo, no mostrar en producción
+    console.warn(`[${SERVICE_ID}] Se recibió un código QR vacío o nulo, ignorando.`);
     return;
   }
+  
   try {
     // Guardar el QR en un archivo separado y también en el estado
     fs.writeFileSync(QR_FILE_PATH, qrCode);
+    
     // Actualizar el estado para incluir el QR directamente
     const status = readStatus();
+    const now = new Date().toISOString();
+    
+    // Verificar si este QR es diferente al anterior
+    const isNewQr = status.qrCode !== qrCode;
+    
+    // Actualizar estado con nuevo QR
     status.hasQrCode = true;
-    status.qrCode = qrCode; // Incluir el QR en el estado
-    status.qrTimestamp = new Date().toISOString();
+    status.qrCode = qrCode;
+    status.qrTimestamp = now;
+    status.lastUpdate = now;
+    
+    // Guardar cambios
     writeStatus(status);
-    // QR generado (no mostrar en producción)
+    
+    // Registrar evento de QR con timestamp visible
+    console.log(`[${SERVICE_ID}] 📱 Código QR ${isNewQr ? 'nuevo' : 'actualizado'} generado: ${new Date().toLocaleString()}`);
   } catch (error) {
-    // Error al guardar QR (no mostrar en producción)
+    console.error(`[${SERVICE_ID}] Error al guardar código QR:`, error);
   }
 }
 

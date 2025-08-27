@@ -1,0 +1,9 @@
+{
+  "users": [
+    {
+      "username": "courierAdmin",
+      "password": "$2b$10$iOPIqa8bNCyk7DVluWkRneQyKj.W74lPviPUS/7po8kb6TSsD12A2",
+      "role": "admin"
+    }
+  ]
+}

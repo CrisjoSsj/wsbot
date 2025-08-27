@@ -30,6 +30,15 @@ process.on('uncaughtException', (err) => {
   console.error('[GLOBAL] Uncaught Exception:', err);
 });
 
+// Activar gestión de memoria para entornos con recursos limitados
+try {
+  const memoryManagement = require('./utils/memory-management');
+  memoryManagement.startMemoryMonitoring();
+  console.log('✅ Sistema de gestión de memoria para recursos limitados iniciado');
+} catch (memError) {
+  console.error('❌ Error al iniciar sistema de gestión de memoria:', memError.message);
+}
+
 // Seguridad HTTP y CORS
 app.use(helmet());
 app.use(cors()); // Puedes personalizar los orígenes permitidos aquí
